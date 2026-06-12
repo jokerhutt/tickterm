@@ -2,44 +2,59 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import DataTable, Header, Input, Static
 
+from themes import ROSE_PINE
+from widgets.watchlist import WatchList
+
 class DashboardScreen(Screen[None]):
 
-    CSS = """
-    #ticker {
+    theme = ROSE_PINE
+
+    CSS = f"""
+
+    Screen {{
+        background: {ROSE_PINE["bg"]};
+        color: {ROSE_PINE["text"]};
+    }}
+
+    #ticker {{
+        background: {ROSE_PINE["surface"]};
         height: 3;
-    }
+    }}
 
-    #body {
+    #body {{
         height: 1fr;
-    }
+    }}
 
-    #sidebar {
+    #sidebar {{
+        background: {ROSE_PINE["surface"]};
         width: 30;
-    }
+    }}
 
-    #main {
+    #main {{
+        background: {ROSE_PINE["bg"]};
         width: 1fr;
-    }
+    }}
 
-    #watchlist {
+    #watchlist {{
+        background: {ROSE_PINE["surface"]};
         height: 1fr;
-    }
+    }}
 
-    #summary {
+    #summary {{
         height: 6;
-    }
+    }}
 
-    #chart {
+    #chart {{
         height: 1fr;
-    }
+    }}
 
-    #news {
+    #news {{
         height: 8;
-    }
+    }}
 
-    #command {
+    #command {{
         height: 3;
-    }
+    }}
 
     """
 
@@ -50,7 +65,7 @@ class DashboardScreen(Screen[None]):
 
             # Left pane stuff
             with Vertical(id = "sidebar"):
-                yield DataTable(id = "watchlist")
+                yield WatchList(id = "watchlist")
 
             # Right pane stuff
             with Vertical(id = "main"):
