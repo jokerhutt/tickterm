@@ -39,8 +39,8 @@ class TickerBar(Static) :
             Group(
                 Columns(
                     panels,
-                    expand=True,
-                    equal=True,
+                    expand=False,
+                    equal=False,
                 )
             )
         )

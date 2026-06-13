@@ -7,6 +7,7 @@ from mocks import mock_tickers
 from models.asset import Asset
 from models.chart_data import ChartData
 from models.news_item import NewsItem
+from services.market_data_service import MarketDataService
 from themes import ROSE_PINE
 from widgets.chart import Chart
 from widgets.news import News
@@ -23,8 +24,13 @@ class DashboardScreen(Screen[None]):
     news_items: dict[str, list[NewsItem]]
     current_symbol: str
 
+    service: MarketDataService
+
     def __init__(self):
+
         super().__init__()
+
+        self.service = MarketDataService()
 
         self.assets = {}
         self.charts = {}
