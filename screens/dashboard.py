@@ -1,10 +1,11 @@
-from datetime import datetime
 from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
-from textual.widgets import DataTable, Header, Input, Static
+from textual.widgets import Input
 
+from messages.symbol_selected import SymbolSelected
+from mocks import mock_tickers
 from models.asset import Asset
-from models.chart_data import ChartData, ChartPoint, Timeframe
+from models.chart_data import ChartData
 from models.news_item import NewsItem
 from themes import ROSE_PINE
 from widgets.chart import Chart
@@ -16,6 +17,19 @@ from widgets.watchlist import WatchList
 class DashboardScreen(Screen[None]):
 
     theme = ROSE_PINE
+
+    assets: dict[str, Asset]
+    charts: dict[str, ChartData]
+    news_items: dict[str, list[NewsItem]]
+    current_symbol: str
+
+    def __init__(self):
+        super().__init__()
+
+        self.assets = {}
+        self.charts = {}
+        self.news_items = {}
+        self.current_symbol = "AAPL"
 
     CSS = f"""
 
@@ -67,65 +81,41 @@ class DashboardScreen(Screen[None]):
 
     """
 
+    def on_symbol_selected(self, event: SymbolSelected) -> None:
+
+        self.current_symbol = event.symbol
+
+        summary = self.query_one("#summary", Summary)
+        chart = self.query_one("#chart", Chart)
+        news = self.query_one("#news", News)
+
+        summary.set_asset(self.assets[self.current_symbol])
+        chart.set_chart_data(self.charts[self.current_symbol])
+        news.set_news(self.news_items[self.current_symbol])
+        
+
     def on_mount(self) -> None:
 
-        assets = [
-            Asset("AAPL", "Apple Inc.", 213.50, 1.20, 50_000_000, 3_000_000_000_000),
-            Asset("MSFT", "Microsoft", 478.10, -0.40, 25_000_000, 3_500_000_000_000),
-            Asset("NVDA", "Nvidia", 142.80, 2.15, 70_000_000, 3_200_000_000_000),
-        ]
+        self.current_symbol = "AAPL"
+        self.assets = mock_tickers.MOCK_ASSETS
+        self.charts = mock_tickers.MOCK_CHARTS
+        self.news_items = mock_tickers.MOCK_NEWS
 
-        aapl = assets[0]
-
-        chart_data = ChartData(
-            symbol="AAPL",
-            timeframe=Timeframe.ONE_MONTH,
-            points=[
-                ChartPoint(datetime(2026, 5, 1), 205),
-                ChartPoint(datetime(2026, 5, 2), 207),
-                ChartPoint(datetime(2026, 5, 3), 200),
-                ChartPoint(datetime(2026, 5, 4), 206),
-                ChartPoint(datetime(2026, 5, 5), 210),
-                ChartPoint(datetime(2026, 5, 6), 212),
-                ChartPoint(datetime(2026, 5, 7), 211),
-                ChartPoint(datetime(2026, 5, 8), 214),
-                ChartPoint(datetime(2026, 5, 9), 217),
-                ChartPoint(datetime(2026, 5, 10), 215),
-                ChartPoint(datetime(2026, 5, 11), 218),
-                ChartPoint(datetime(2026, 5, 12), 220),
-                ChartPoint(datetime(2026, 5, 13), 219),
-                ChartPoint(datetime(2026, 5, 14), 222),
-                ChartPoint(datetime(2026, 5, 15), 224),
-                ChartPoint(datetime(2026, 5, 16), 221),
-                ChartPoint(datetime(2026, 5, 17), 223),
-                ChartPoint(datetime(2026, 5, 18), 226),
-                ChartPoint(datetime(2026, 5, 19), 228),
-                ChartPoint(datetime(2026, 5, 20), 227),
-                ChartPoint(datetime(2026, 5, 21), 230),
-                ChartPoint(datetime(2026, 5, 22), 232),
-                ChartPoint(datetime(2026, 5, 23), 229),
-                ChartPoint(datetime(2026, 5, 24), 231),
-                ChartPoint(datetime(2026, 5, 25), 234),
-                ChartPoint(datetime(2026, 5, 26), 236),
-                ChartPoint(datetime(2026, 5, 27), 235),
-                ChartPoint(datetime(2026, 5, 28), 238),
-                ChartPoint(datetime(2026, 5, 29), 240),
-                ChartPoint(datetime(2026, 5, 30), 242),
-            ]
-        )
+        current_asset = self.assets[self.current_symbol]
+        current_chart = self.charts[self.current_symbol]
+        current_news = self.news_items[self.current_symbol]
 
         summary = self.query_one("#summary", Summary)
         news = self.query_one("#news", News)
         chart = self.query_one("#chart", Chart)
+        watchlist = self.query_one("#watchlist", WatchList)
         ticker_bar = self.query_one("#ticker", TickerBar)
 
-        summary.set_asset(aapl)
-        ticker_bar.set_assets(assets)
-        chart.set_chart_data(chart_data)
-
-        news_list = [NewsItem("Apple releases Siri", "NYT", "2nd June")]
-
-        news.set_news(news_list)
+        summary.set_asset(current_asset)
+        ticker_bar.set_assets(list(self.assets.values()))
+        watchlist.set_assets(list(self.assets.values()))
+        chart.set_chart_data(current_chart)
+        news.set_news(current_news)
 
     def compose(self):
         yield TickerBar(id="ticker")

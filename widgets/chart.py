@@ -16,6 +16,9 @@ class Chart(PlotextPlot):
     """
 
     def set_chart_data(self, chart_data: ChartData):
+        self.plt.clear_data()
+
+
         self.theme = "textual-clear"
         
         prices = []
@@ -34,6 +37,8 @@ class Chart(PlotextPlot):
         )
 
         self.plt.title(f"{chart_data.symbol} • {chart_data.timeframe}")
+
+        self.refresh()
 
 
 
