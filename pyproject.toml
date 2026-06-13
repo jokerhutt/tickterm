@@ -6,5 +6,6 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "textual>=8.2.7",
+    "textual-plotext>=1.0.1",
     "yfinance>=1.4.1",
 ]
