@@ -3,10 +3,12 @@ from textual.screen import Screen
 from textual.widgets import DataTable, Header, Input, Static
 
 from models.asset import Asset
+from models.news_item import NewsItem
 from themes import ROSE_PINE
 from widgets.chart import Chart
 from widgets.news import News
 from widgets.summary import Summary
+from widgets.ticker_bar import TickerBar
 from widgets.watchlist import WatchList
 
 class DashboardScreen(Screen[None]):
@@ -64,9 +66,7 @@ class DashboardScreen(Screen[None]):
 
     def on_mount(self) -> None:
 
-        summary = self.query_one("#summary", Summary)
-
-        summary.set_asset(
+        assets = [ 
             Asset(
                 symbol = "AAPL",
                 name = "Apple Inc.",
@@ -75,10 +75,23 @@ class DashboardScreen(Screen[None]):
                 volume = 50_000_000,
                 market_cap = 3_000_000_000_000
             )
-        )
+        ]
+
+        aapl = assets[0]
+
+        summary = self.query_one("#summary", Summary)
+        news = self.query_one("#news", News)
+        ticker_bar = self.query_one("#ticker", TickerBar)
+
+        summary.set_asset(aapl)
+        ticker_bar.set_assets(assets)
+
+        news_list = [NewsItem("Apple releases Siri", "NYT", "2nd June")]
+
+        news.set_news(news_list)
 
     def compose(self):
-        yield Static("TICKER BAR", id="ticker")
+        yield TickerBar(id="ticker")
 
         with Horizontal(id = "body"):
 
