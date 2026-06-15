@@ -22,19 +22,17 @@ class Summary(Static):
         table.add_column(justify="center")
 
         table.add_row(
-
-            Text("Last\n$213.50", style=ROSE_PINE["text"]),
-            Text("Change\n+1.20%", style=change_style),
-            Text("Volume\n50M", style=ROSE_PINE["text"]),
-            Text("Mkt Cap\n3.0T", style=ROSE_PINE["text"]),
-
+            Text(f"Last\n${asset.price:.2f}", style=ROSE_PINE["text"]),
+            Text(f"Change\n{asset.change_pct:+.2f}%", style=change_style),
+            Text(f"Volume\n{asset.volume:,}", style=ROSE_PINE["text"]),
+            Text(f"Mkt Cap\n{asset.market_cap:,}", style=ROSE_PINE["text"]),
         )
 
         self.update(
 
             Panel(
                 table,
-                title="AAPL • Apple Inc.",
+                title=f"{asset.symbol} • {asset.name}",
                 border_style=ROSE_PINE["accent"],
                 padding=(0, 1),
             )

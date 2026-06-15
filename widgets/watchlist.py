@@ -1,27 +1,7 @@
-
 from textual.widgets import DataTable
-
+from messages.symbol_selected import SymbolSelected
 from models.asset import Asset
 
-aapl = Asset(
-    symbol="AAPL",
-    name="Apple Inc.",
-    price=213.50,
-    change_pct=1.20,
-    volume=50_000_000,
-    market_cap=3_000_000_000_000
-)
-
-msft = Asset(
-    symbol="MSFT",
-    name="Microsoft",
-    price=478.10,
-    change_pct=-0.40,
-    volume=25_000_000,
-    market_cap=3_500_000_000_000
-)
-
-assets = [aapl, msft]
 
 
 class WatchList(DataTable[str]) :
@@ -38,6 +18,8 @@ class WatchList(DataTable[str]) :
             "%"
         )
 
+    def set_assets(self, assets: list[Asset]):
+        self.clear()
         for asset in assets:
             self.add_row(
                 asset.symbol,
@@ -45,4 +27,15 @@ class WatchList(DataTable[str]) :
                 f"${asset.price:.2f}",
                 f"{asset.change_pct:+.2f}%"
             )
+
+    def on_data_table_row_selected(
+        self,
+        event: DataTable.RowSelected
+    ):
+        symbol = self.get_row_at(event.cursor_row)[0]
+
+        self.post_message(
+            SymbolSelected(symbol)
+        )
+
 
