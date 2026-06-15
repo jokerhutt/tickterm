@@ -1,6 +1,9 @@
+from datetime import datetime, timedelta
+from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Input
+from yfinance.utils import relativedelta
 
 from messages.symbol_selected import SymbolSelected
 from mocks import mock_tickers
@@ -38,6 +41,10 @@ class DashboardScreen(Screen[None]):
         self.news_items = {}
         self.current_symbol = "AAPL"
         self.chart_range = Timeframe.ONE_DAY
+
+    BINDINGS = [
+        Binding("g", "cycle_timeframe", "Cycle Timeframe")
+    ]
 
     CSS = f"""
 
@@ -101,7 +108,7 @@ class DashboardScreen(Screen[None]):
         current_chart_data = self.charts[self.current_symbol].intraday
 
         summary.set_asset(self.assets[self.current_symbol])
-        chart.set_chart_data(current_chart_data)
+        chart.set_chart_data(current_chart_data, self.chart_range)
         news.set_news(self.news_items[self.current_symbol])
         
 
@@ -136,37 +143,66 @@ class DashboardScreen(Screen[None]):
         summary.set_asset(current_asset)
         ticker_bar.set_assets(list(self.assets.values()))
         watchlist.set_assets(list(self.assets.values()))
-        chart.set_chart_data(current_chart)
+        chart.set_chart_data(current_chart, self.chart_range)
         news.set_news(current_news)
 
-    def get_chart_view(self) -> ChartData | None :
+    def filter_chart(self, chart: ChartData | None, cutoff: datetime) -> ChartData | None :
+        if chart is None :
+            return None
+
+        return chart.last(cutoff)
+
+    def get_chart_view(self) -> ChartData | None:
 
         symbol = self.current_symbol
         timeframe = self.chart_range
 
         cache = self.charts[symbol]
 
-        chosen_chart : ChartData | None = None
-
-        match timeframe :
+        match timeframe:
             case Timeframe.ONE_HOUR:
-                chosen_chart = cache.intraday
+                return self.filter_chart(
+                    cache.intraday,
+                    datetime.now(cache.intraday.points[-1].timestamp.tzinfo) - timedelta(hours=1)
+                ) if cache.intraday else None
+
             case Timeframe.ONE_DAY:
-                chosen_chart = cache.intraday
+                return cache.intraday
 
             case Timeframe.ONE_WEEK:
-                chosen_chart = cache.daily
+                return self.filter_chart(
+                    cache.daily,
+                    datetime.now(cache.daily.points[-1].timestamp.tzinfo) - relativedelta(weeks=1)
+                ) if cache.daily else None
+
             case Timeframe.ONE_MONTH:
-                chosen_chart = cache.daily
+                return self.filter_chart(
+                    cache.daily,
+                    datetime.now(cache.daily.points[-1].timestamp.tzinfo) - relativedelta(months=1)
+                ) if cache.daily else None
+
             case Timeframe.ONE_YEAR:
-                chosen_chart = cache.daily
+                return self.filter_chart(
+                    cache.daily,
+                    datetime.now(cache.daily.points[-1].timestamp.tzinfo) - relativedelta(years=1)
+                ) if cache.daily else None
+
             case Timeframe.FIVE_YEARS:
-                chosen_chart = cache.daily
+                return cache.daily
 
             case Timeframe.MAX:
-                chosen_chart = cache.longterm
+                return cache.longterm
 
-        return chosen_chart
+    def action_cycle_timeframe(self) -> None:
+        timeframes = list(Timeframe)
+
+        current_index = timeframes.index(self.chart_range)
+        next_index = (current_index + 1) % len(timeframes)
+
+        self.chart_range = timeframes[next_index]
+
+        chart = self.query_one("#chart", Chart)
+        chart.set_chart_data(self.get_chart_view(), self.chart_range)
 
     def compose(self):
         yield TickerBar(id="ticker")

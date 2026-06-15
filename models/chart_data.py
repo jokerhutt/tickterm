@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -28,10 +27,26 @@ class ChartData:
     timerange: TimeRange 
     points: list[ChartPoint]
 
+    # e.g. for past 1 hour u would pass in 60
+    def last(self, cutoff: datetime) -> "ChartData":
+        filtered_points : list[ChartPoint] = []
+
+        for point in self.points :
+            if point.timestamp >= cutoff:
+                filtered_points.append(point)
+
+        return ChartData(
+            symbol = self.symbol,
+            timerange = self.timerange,
+            points = filtered_points
+        )
+
 @dataclass
 class ChartCache:
     intraday: ChartData | None = None
     daily: ChartData | None = None
     longterm: ChartData | None = None
+
+
 
 
