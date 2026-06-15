@@ -41,10 +41,13 @@ class MarketDataService:
         match (time_range) :
             case TimeRange.INTRADAY :
                 interval = "1m"
+            case TimeRange.HOURLY :
+                interval = "1h"
             case TimeRange.DAILY :
                 interval = "1d"
             case TimeRange.LONGTERM :
                 interval = "1w"
+
 
         history = ticker.history(period=period, interval = interval)
 

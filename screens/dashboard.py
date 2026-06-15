@@ -124,6 +124,7 @@ class DashboardScreen(Screen[None]):
         for symbol in watchlist:
             self.charts[symbol] = ChartCache(
                 intraday = self.service.get_chart(symbol, TimeRange.INTRADAY),
+                hourly = self.service.get_chart(symbol, TimeRange.HOURLY),
                 daily = self.service.get_chart(symbol, TimeRange.DAILY),
                 longterm = self.service.get_chart(symbol, TimeRange.LONGTERM)
             )
@@ -170,10 +171,7 @@ class DashboardScreen(Screen[None]):
                 return cache.intraday
 
             case Timeframe.ONE_WEEK:
-                return self.filter_chart(
-                    cache.daily,
-                    datetime.now(cache.daily.points[-1].timestamp.tzinfo) - relativedelta(weeks=1)
-                ) if cache.daily else None
+                return cache.hourly
 
             case Timeframe.ONE_MONTH:
                 return self.filter_chart(

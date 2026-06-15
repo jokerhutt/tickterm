@@ -5,7 +5,7 @@ from enum import Enum
 class Timeframe(Enum):
     ONE_HOUR = "1h"
     ONE_DAY = "1d"
-    ONE_WEEK = "1w"
+    ONE_WEEK = "7d"
     ONE_MONTH = "1mo"
     ONE_YEAR = "1y"
     FIVE_YEARS = "5y"
@@ -13,6 +13,7 @@ class Timeframe(Enum):
 
 class TimeRange(Enum):
     INTRADAY = "1d"
+    HOURLY = "7d"
     DAILY = "5y"
     LONGTERM = "max"
 
@@ -44,6 +45,7 @@ class ChartData:
 @dataclass
 class ChartCache:
     intraday: ChartData | None = None
+    hourly: ChartData | None = None
     daily: ChartData | None = None
     longterm: ChartData | None = None
 
