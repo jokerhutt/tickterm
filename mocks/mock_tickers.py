@@ -26,7 +26,7 @@ MOCK_ASSETS = {
 MOCK_CHARTS = {
     "AAPL": ChartData(
         symbol="AAPL",
-        timeframe=Timeframe.ONE_MONTH,
+        timerange=Timeframe.ONE_MONTH,
         points=[
             ChartPoint(datetime(2026, 5, 1), 205),
             ChartPoint(datetime(2026, 5, 2), 207),
@@ -62,7 +62,7 @@ MOCK_CHARTS = {
     ),
     "MSFT": ChartData(
         symbol="MSFT",
-        timeframe=Timeframe.ONE_MONTH,
+        timerange=Timeframe.ONE_MONTH,
         points=[
             ChartPoint(datetime(2026, 5, 1), 450),
             ChartPoint(datetime(2026, 5, 2), 452),

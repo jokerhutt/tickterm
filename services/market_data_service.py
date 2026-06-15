@@ -1,7 +1,7 @@
 from pandas import Timestamp
 from yfinance.base import FastInfo
 from models.asset import Asset
-from models.chart_data import ChartData, ChartPoint, Timeframe
+from models.chart_data import ChartData, ChartPoint, TimeRange, Timeframe
 from models.news_item import NewsItem
 import yfinance as yf
 
@@ -31,17 +31,22 @@ class MarketDataService:
 
 
 
-    def get_chart(self, symbol: str, timeframe: Timeframe) -> ChartData :
+    def get_chart(self, symbol: str, time_range: TimeRange) -> ChartData :
         ticker = yf.Ticker(symbol)
 
-        period_map = {
-            Timeframe.ONE_DAY: "1d",
-            Timeframe.ONE_WEEK: "5d",
-            Timeframe.ONE_MONTH: "1mo",
-            Timeframe.ONE_YEAR: "1y"
-        }
+        period = time_range.value
 
-        history = ticker.history(period=period_map[timeframe])
+        interval = "1d"
+
+        match (time_range) :
+            case TimeRange.INTRADAY :
+                interval = "1m"
+            case TimeRange.DAILY :
+                interval = "1d"
+            case TimeRange.LONGTERM :
+                interval = "1w"
+
+        history = ticker.history(period=period, interval = interval)
 
         points: list[ChartPoint] = []
 
@@ -59,8 +64,7 @@ class MarketDataService:
                 )
             )
 
-        return ChartData(symbol = symbol, timeframe = timeframe, points = points)
-
+        return ChartData(symbol = symbol, timerange = time_range, points = points)
 
     def get_news(
         self,
