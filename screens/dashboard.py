@@ -127,11 +127,8 @@ class DashboardScreen(Screen[None]):
         self.last_refresh = time.time()
 
         self.query_one("#summary", Summary).set_asset(self.assets[self.current_symbol])
-
         self.query_one("#ticker", TickerBar).set_assets(list(self.assets.values()))
-
         self.query_one("#watchlist", WatchList).set_assets(list(self.assets.values()))
-
         self.query_one("#chart", Chart).set_chart_data(self.get_chart_view(),self.chart_range)
 
 
