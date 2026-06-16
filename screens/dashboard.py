@@ -11,6 +11,7 @@ from mocks import mock_tickers
 from models.asset import Asset
 from models.chart_data import ChartCache, ChartData, TimeRange, Timeframe
 from models.news_item import NewsItem
+from screens.add_ticker_modal import AddTickerModal
 from services.market_data_service import MarketDataService
 from themes import ROSE_PINE
 from widgets.chart import Chart
@@ -51,7 +52,8 @@ class DashboardScreen(Screen[None]):
 
     BINDINGS = [
         Binding("g", "cycle_timeframe", "Cycle Timeframe"),
-        Binding("l", "toggle_reference_lines", "Toggle Reference Lines")
+        Binding("l", "toggle_reference_lines", "Toggle Reference Lines"),
+        Binding("a", "add_ticker", "Add Ticker"),
     ]
 
     CSS = f"""
@@ -119,6 +121,8 @@ class DashboardScreen(Screen[None]):
         summary.set_asset(self.assets[self.current_symbol])
         chart.set_chart_data(current_chart_data, self.chart_range, self.reference_lines)
         news.set_news(self.news_items[self.current_symbol])
+
+
 
     def refresh_intraday(self) -> None:
         for symbol, cache in self.charts.items():
@@ -233,6 +237,32 @@ class DashboardScreen(Screen[None]):
 
             case Timeframe.MAX:
                 return cache.longterm
+
+    def action_add_ticker(self) -> None:
+        self.app.push_screen(
+            AddTickerModal(),
+            self.on_ticker_added
+        )
+    
+    def on_ticker_added(self, symbol: str | None) -> None:
+        if symbol is None or symbol in self.watchlist:
+            return
+
+        self.watchlist.append(symbol)
+
+        self.assets[symbol] = self.service.get_asset(symbol)
+
+        self.charts[symbol] = ChartCache(
+            intraday=self.service.get_chart(symbol, TimeRange.INTRADAY),
+            hourly=self.service.get_chart(symbol, TimeRange.HOURLY),
+            daily=self.service.get_chart(symbol, TimeRange.DAILY),
+            longterm=self.service.get_chart(symbol, TimeRange.LONGTERM),
+        )
+
+        self.news_items[symbol] = self.service.get_news(symbol)
+
+        self.query_one("#ticker", TickerBar).set_assets(list(self.assets.values()))
+        self.query_one("#watchlist", WatchList).set_assets(list(self.assets.values()))
 
     def action_cycle_timeframe(self) -> None:
         timeframes = list(Timeframe)
