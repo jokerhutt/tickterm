@@ -2,10 +2,9 @@ from pandas import Timestamp
 from yfinance.base import FastInfo
 from models.asset import Asset
 from models.chart_data import ChartCache, ChartData, ChartPoint, TimeRange, Timeframe
+from models.financials import TickerFinancials
 from models.news_item import NewsItem
 import yfinance as yf
-
-
 
 class MarketDataService:
     def get_asset(self, symbol: str) -> Asset :
@@ -29,6 +28,22 @@ class MarketDataService:
             market_cap = market_cap
         )
 
+
+    def get_financials(self, symbol: str) -> TickerFinancials:
+        ticker = yf.Ticker(symbol)
+
+        info = ticker.info
+
+        return TickerFinancials(
+            market_cap=info.get("marketCap"),
+            pe_ratio=info.get("trailingPE"),
+            revenue=info.get("totalRevenue"),
+            net_income=info.get("netIncomeToCommon"),
+            profit_margin=info.get("profitMargins"),
+            debt_to_equity=info.get("debtToEquity"),
+            current_ratio=info.get("currentRatio"),
+            return_on_equity=info.get("returnOnEquity"),
+        )
 
     def update_intraday_cache(self, symbol: str, cache: ChartCache) -> ChartCache:
         ticker = yf.Ticker(symbol)
@@ -75,21 +90,8 @@ class MarketDataService:
 
     def get_chart(self, symbol: str, time_range: TimeRange) -> ChartData :
         ticker = yf.Ticker(symbol)
-
         period = time_range.value
-
-        interval = "1d"
-
-        match (time_range) :
-            case TimeRange.INTRADAY :
-                interval = "1m"
-            case TimeRange.HOURLY :
-                interval = "1h"
-            case TimeRange.DAILY :
-                interval = "1d"
-            case TimeRange.LONGTERM :
-                interval = "1wk"
-
+        interval = time_range.interval
 
         history = ticker.history(period=period, interval = interval)
 

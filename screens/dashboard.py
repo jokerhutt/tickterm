@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from textual.binding import Binding
-from textual.containers import Horizontal, Vertical
+from textual.containers import Container, Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Input
 from yfinance.utils import relativedelta
@@ -10,11 +10,13 @@ import time
 from mocks import mock_tickers
 from models.asset import Asset
 from models.chart_data import ChartCache, ChartData, TimeRange, Timeframe
+from models.financials import TickerFinancials
 from models.news_item import NewsItem
 from screens.add_ticker_modal import AddTickerModal
 from services.market_data_service import MarketDataService
 from themes import ROSE_PINE
 from widgets.chart import Chart
+from widgets.financials import Financials
 from widgets.news import News
 from widgets.summary import Summary
 from widgets.ticker_bar import TickerBar
@@ -27,13 +29,16 @@ class DashboardScreen(Screen[None]):
     assets: dict[str, Asset]
     charts: dict[str, ChartCache]
     news_items: dict[str, list[NewsItem]]
+    financials: dict[str, TickerFinancials]
     watchlist: list[str]
     current_symbol: str
     last_refresh : float
-    reference_lines: bool
     chart_range: Timeframe
 
     service: MarketDataService
+
+    reference_lines: bool
+    show_financials: bool
 
     def __init__(self):
 
@@ -42,6 +47,7 @@ class DashboardScreen(Screen[None]):
         self.service = MarketDataService()
 
         self.assets = {}
+        self.financials = {}
         self.charts = {}
         self.news_items = {}
         self.last_refresh = time.time()
@@ -49,11 +55,13 @@ class DashboardScreen(Screen[None]):
         self.current_symbol = self.watchlist[0]
         self.chart_range = Timeframe.ONE_DAY
         self.reference_lines = True
+        self.show_financials = False
 
     BINDINGS = [
         Binding("g", "cycle_timeframe", "Cycle Timeframe"),
         Binding("l", "toggle_reference_lines", "Toggle Reference Lines"),
         Binding("a", "add_ticker", "Add Ticker"),
+        Binding("v", "toggle_view", "Toggle View")
     ]
 
     CSS = f"""
@@ -77,6 +85,10 @@ class DashboardScreen(Screen[None]):
         width: 40;
     }}
 
+    #content {{
+        height: 1fr;
+    }}
+
     #main {{
         background: {ROSE_PINE["bg"]};
         width: 1fr;
@@ -97,6 +109,11 @@ class DashboardScreen(Screen[None]):
         height: 1fr;
     }}
 
+    #financials {{
+        height: 1fr;
+        display: none;
+    }}
+
     #news {{
         height: 8;
     }}
@@ -114,12 +131,14 @@ class DashboardScreen(Screen[None]):
         summary = self.query_one("#summary", Summary)
         chart = self.query_one("#chart", Chart)
         news = self.query_one("#news", News)
+        financials = self.query_one("#financials", Financials)
 
 
         current_chart_data = self.charts[self.current_symbol].intraday
 
         summary.set_asset(self.assets[self.current_symbol])
         chart.set_chart_data(current_chart_data, self.chart_range, self.reference_lines)
+        financials.set_data(self.current_symbol, self.financials[self.current_symbol])
         news.set_news(self.news_items[self.current_symbol])
 
 
@@ -174,6 +193,9 @@ class DashboardScreen(Screen[None]):
         for symbol in self.watchlist:
             self.news_items[symbol] = self.service.get_news(symbol)
 
+        for symbol in self.watchlist:
+            self.financials[symbol] = self.service.get_financials(symbol)
+
         # current stuffs
         current_asset = self.assets[self.current_symbol]
         current_chart = self.get_chart_view()
@@ -183,6 +205,7 @@ class DashboardScreen(Screen[None]):
         summary = self.query_one("#summary", Summary)
         news = self.query_one("#news", News)
         chart = self.query_one("#chart", Chart)
+        financials = self.query_one("#financials", Financials)
         watchlist = self.query_one("#watchlist", WatchList)
         ticker_bar = self.query_one("#ticker", TickerBar)
 
@@ -191,6 +214,7 @@ class DashboardScreen(Screen[None]):
         ticker_bar.set_assets(list(self.assets.values()))
         watchlist.set_assets(list(self.assets.values()))
         chart.set_chart_data(current_chart, self.chart_range, self.reference_lines)
+        financials.set_data(self.current_symbol, self.financials[self.current_symbol])
         news.set_news(current_news)
 
 
@@ -259,6 +283,7 @@ class DashboardScreen(Screen[None]):
             longterm=self.service.get_chart(symbol, TimeRange.LONGTERM),
         )
 
+        self.financials[symbol] = self.service.get_financials(symbol)
         self.news_items[symbol] = self.service.get_news(symbol)
 
         self.query_one("#ticker", TickerBar).set_assets(list(self.assets.values()))
@@ -280,6 +305,14 @@ class DashboardScreen(Screen[None]):
         chart = self.query_one("#chart", Chart)
         chart.set_chart_data(self.get_chart_view(), self.chart_range, self.reference_lines)
 
+    def action_toggle_view(self) -> None:
+        self.show_financials = not self.show_financials
+        chart = self.query_one("#chart", Chart)
+        financials = self.query_one("#financials", Financials)
+
+        chart.display = not self.show_financials
+        financials.display = self.show_financials
+
     def compose(self):
         yield TickerBar(id="ticker")
 
@@ -292,7 +325,9 @@ class DashboardScreen(Screen[None]):
             # Right pane stuff
             with Vertical(id = "main"):
                 yield Summary(id="summary")
-                yield Chart(id="chart")
+                with Container(id = "content"):
+                    yield Chart(id="chart")
+                    yield Financials(id = "financials")
                 yield News(id="news")
 
         yield Input(placeholder="Command...", id="command")
