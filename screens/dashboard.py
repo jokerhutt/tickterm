@@ -6,6 +6,7 @@ from textual.widgets import Input
 from yfinance.utils import relativedelta
 
 from messages.symbol_selected import SymbolSelected
+import time
 from mocks import mock_tickers
 from models.asset import Asset
 from models.chart_data import ChartCache, ChartData, TimeRange, Timeframe
@@ -25,7 +26,9 @@ class DashboardScreen(Screen[None]):
     assets: dict[str, Asset]
     charts: dict[str, ChartCache]
     news_items: dict[str, list[NewsItem]]
+    watchlist: list[str]
     current_symbol: str
+    last_refresh : float
     chart_range: Timeframe
 
     service: MarketDataService
@@ -39,7 +42,9 @@ class DashboardScreen(Screen[None]):
         self.assets = {}
         self.charts = {}
         self.news_items = {}
-        self.current_symbol = "AAPL"
+        self.last_refresh = time.time()
+        self.watchlist = ["AAPL", "MSFT", "NVDA"]
+        self.current_symbol = self.watchlist[0]
         self.chart_range = Timeframe.ONE_DAY
 
     BINDINGS = [
@@ -70,6 +75,7 @@ class DashboardScreen(Screen[None]):
     #main {{
         background: {ROSE_PINE["bg"]};
         width: 1fr;
+        padding: 1 2;
     }}
 
     #watchlist {{
@@ -110,42 +116,76 @@ class DashboardScreen(Screen[None]):
         summary.set_asset(self.assets[self.current_symbol])
         chart.set_chart_data(current_chart_data, self.chart_range)
         news.set_news(self.news_items[self.current_symbol])
+
+    def refresh_intraday(self) -> None:
+        for symbol, cache in self.charts.items():
+            self.charts[symbol] = self.service.update_intraday_cache(
+                symbol,
+                cache
+            )
+            self.assets[symbol] = self.service.update_asset(symbol, self.assets[symbol])
+        self.last_refresh = time.time()
+
+        self.query_one("#summary", Summary).set_asset(self.assets[self.current_symbol])
+
+        self.query_one("#ticker", TickerBar).set_assets(list(self.assets.values()))
+
+        self.query_one("#watchlist", WatchList).set_assets(list(self.assets.values()))
+
+        self.query_one("#chart", Chart).set_chart_data(self.get_chart_view(),self.chart_range)
+
+
+
+
+    def update_chart_timer(self) -> None:
+        age = int(time.time() - self.last_refresh)
+        next_refresh = max(0, 60 - age)
+        chart = self.query_one("#chart", Chart)
+        chart.update_refresh_timer(next_refresh)
         
 
     def on_mount(self) -> None:
 
-        watchlist = ["AAPL", "MSFT", "NVDA"]
+        # every 60 seconds, a minute passes on wall street
+        ## as such we must refresh
+        self.last_refresh = time.time()
+        self.set_interval(1, self.update_chart_timer)
+        self.set_interval(60, self.refresh_intraday)
 
-        self.current_symbol = watchlist[0]
+        # seed stuffs
+        self.current_symbol = self.watchlist[0]
         self.chart_range = Timeframe.ONE_DAY
-
-        for symbol in watchlist:
+        for symbol in self.watchlist:
             self.assets[symbol] = self.service.get_asset(symbol)
-        for symbol in watchlist:
+        for symbol in self.watchlist:
             self.charts[symbol] = ChartCache(
                 intraday = self.service.get_chart(symbol, TimeRange.INTRADAY),
                 hourly = self.service.get_chart(symbol, TimeRange.HOURLY),
                 daily = self.service.get_chart(symbol, TimeRange.DAILY),
                 longterm = self.service.get_chart(symbol, TimeRange.LONGTERM)
             )
-        for symbol in watchlist:
+        for symbol in self.watchlist:
             self.news_items[symbol] = self.service.get_news(symbol)
 
+        # current stuffs
         current_asset = self.assets[self.current_symbol]
         current_chart = self.get_chart_view()
         current_news = self.news_items[self.current_symbol]
 
+        # textual stuffs
         summary = self.query_one("#summary", Summary)
         news = self.query_one("#news", News)
         chart = self.query_one("#chart", Chart)
         watchlist = self.query_one("#watchlist", WatchList)
         ticker_bar = self.query_one("#ticker", TickerBar)
 
+        # setterz
         summary.set_asset(current_asset)
         ticker_bar.set_assets(list(self.assets.values()))
         watchlist.set_assets(list(self.assets.values()))
         chart.set_chart_data(current_chart, self.chart_range)
         news.set_news(current_news)
+
 
     def filter_chart(self, chart: ChartData | None, cutoff: datetime) -> ChartData | None :
         if chart is None :

@@ -12,6 +12,11 @@ class Chart(PlotextPlot):
     Chart {{
         background: {ROSE_PINE["bg"]};
         padding: 1 2;
+
+        border: round {ROSE_PINE["accent"]};
+
+        border-title-align: left;
+        border-subtitle-align: right;
     }}
     """
 
@@ -51,6 +56,10 @@ class Chart(PlotextPlot):
         # title
         self.plt.title(f"{chart_data.symbol} • {chart_data.timerange} • {timeframe}")
 
+        self.refresh()
+
+    def update_refresh_timer(self, seconds: int) -> None:
+        self.border_subtitle = f" next refresh {seconds:02d}s "
         self.refresh()
 
     def get_time_range(self, timeframe: Timeframe) -> str:
