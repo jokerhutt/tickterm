@@ -29,6 +29,7 @@ class DashboardScreen(Screen[None]):
     watchlist: list[str]
     current_symbol: str
     last_refresh : float
+    reference_lines: bool
     chart_range: Timeframe
 
     service: MarketDataService
@@ -46,9 +47,11 @@ class DashboardScreen(Screen[None]):
         self.watchlist = ["AAPL", "MSFT", "NVDA"]
         self.current_symbol = self.watchlist[0]
         self.chart_range = Timeframe.ONE_DAY
+        self.reference_lines = True
 
     BINDINGS = [
-        Binding("g", "cycle_timeframe", "Cycle Timeframe")
+        Binding("g", "cycle_timeframe", "Cycle Timeframe"),
+        Binding("l", "toggle_reference_lines", "Toggle Reference Lines")
     ]
 
     CSS = f"""
@@ -114,7 +117,7 @@ class DashboardScreen(Screen[None]):
         current_chart_data = self.charts[self.current_symbol].intraday
 
         summary.set_asset(self.assets[self.current_symbol])
-        chart.set_chart_data(current_chart_data, self.chart_range)
+        chart.set_chart_data(current_chart_data, self.chart_range, self.reference_lines)
         news.set_news(self.news_items[self.current_symbol])
 
     def refresh_intraday(self) -> None:
@@ -129,7 +132,7 @@ class DashboardScreen(Screen[None]):
         self.query_one("#summary", Summary).set_asset(self.assets[self.current_symbol])
         self.query_one("#ticker", TickerBar).set_assets(list(self.assets.values()))
         self.query_one("#watchlist", WatchList).set_assets(list(self.assets.values()))
-        self.query_one("#chart", Chart).set_chart_data(self.get_chart_view(),self.chart_range)
+        self.query_one("#chart", Chart).set_chart_data(self.get_chart_view(),self.chart_range, self.reference_lines)
 
 
 
@@ -148,6 +151,9 @@ class DashboardScreen(Screen[None]):
         self.last_refresh = time.time()
         self.set_interval(1, self.update_chart_timer)
         self.set_interval(60, self.refresh_intraday)
+
+        # boolean toggles
+        self.reference_lines = True
 
         # seed stuffs
         self.current_symbol = self.watchlist[0]
@@ -180,7 +186,7 @@ class DashboardScreen(Screen[None]):
         summary.set_asset(current_asset)
         ticker_bar.set_assets(list(self.assets.values()))
         watchlist.set_assets(list(self.assets.values()))
-        chart.set_chart_data(current_chart, self.chart_range)
+        chart.set_chart_data(current_chart, self.chart_range, self.reference_lines)
         news.set_news(current_news)
 
 
@@ -237,7 +243,12 @@ class DashboardScreen(Screen[None]):
         self.chart_range = timeframes[next_index]
 
         chart = self.query_one("#chart", Chart)
-        chart.set_chart_data(self.get_chart_view(), self.chart_range)
+        chart.set_chart_data(self.get_chart_view(), self.chart_range, self.reference_lines)
+
+    def action_toggle_reference_lines(self) -> None:
+        self.reference_lines = not self.reference_lines
+        chart = self.query_one("#chart", Chart)
+        chart.set_chart_data(self.get_chart_view(), self.chart_range, self.reference_lines)
 
     def compose(self):
         yield TickerBar(id="ticker")

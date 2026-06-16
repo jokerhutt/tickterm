@@ -88,7 +88,7 @@ class MarketDataService:
             case TimeRange.DAILY :
                 interval = "1d"
             case TimeRange.LONGTERM :
-                interval = "1w"
+                interval = "1wk"
 
 
         history = ticker.history(period=period, interval = interval)
