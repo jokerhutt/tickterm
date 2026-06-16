@@ -39,11 +39,16 @@ class Chart(PlotextPlot):
             label = point.timestamp.strftime(fmt)
             labels.append(label)
 
+
+        # chart color green if up red if down
+        line_color = "green+" if prices[-1] >= prices[0] else "red+"
+
         # funny braille lines
         self.plt.plot(
             range(len(chart_data.points)),
             prices,
-            marker = "braille"
+            marker = "braille",
+            color = line_color
         )
 
 
@@ -56,6 +61,8 @@ class Chart(PlotextPlot):
         # title
         self.plt.title(f"{chart_data.symbol} • {chart_data.timerange} • {timeframe}")
 
+
+
         # reference lines (open, low, high, curr)
         if reference_lines :
             day_open = prices[0]
@@ -66,7 +73,8 @@ class Chart(PlotextPlot):
             self.plt.plot(
                 range(len(prices)),
                 prices,
-                marker="braille"
+                marker="braille",
+                color = line_color
             )
 
             self.plt.hline(day_open, color="yellow")
