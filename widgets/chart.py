@@ -25,20 +25,18 @@ class Chart(PlotextPlot):
 
         log(chart_data)
 
-
         self.theme = "textual-clear"
         
         prices = []
         labels = []
 
-        fmt = self.get_time_range(timeframe)
+        fmt = timeframe.time_format
 
         for point in chart_data.points :
             prices.append(point.price)
 
             label = point.timestamp.strftime(fmt)
             labels.append(label)
-
 
         # chart color green if up red if down
         line_color = "green+" if prices[-1] >= prices[0] else "red+"
@@ -51,7 +49,6 @@ class Chart(PlotextPlot):
             color = line_color
         )
 
-
         # x axis
         step = max(1, len(labels) // 6)
         positions = list(range(0, len(labels), step))
@@ -60,8 +57,6 @@ class Chart(PlotextPlot):
 
         # title
         self.plt.title(f"{chart_data.symbol} • {chart_data.timerange} • {timeframe}")
-
-
 
         # reference lines (open, low, high, curr)
         if reference_lines :
@@ -88,30 +83,6 @@ class Chart(PlotextPlot):
         self.border_subtitle = f" next refresh {seconds:02d}s • press l to toggle reference lines"
         self.refresh()
 
-    def get_time_range(self, timeframe: Timeframe) -> str:
-        match timeframe:
-            case Timeframe.ONE_HOUR:
-                fmt = "%H:%M"
-
-            case Timeframe.ONE_DAY:
-                fmt = "%H:%M"
-
-            case Timeframe.ONE_WEEK:
-                fmt = "%a"
-
-            case Timeframe.ONE_MONTH:
-                fmt = "%d %b"
-
-            case Timeframe.ONE_YEAR:
-                fmt = "%b"
-
-            case Timeframe.FIVE_YEARS:
-                fmt = "%Y"
-
-            case Timeframe.MAX:
-                fmt = "%Y"
-
-        return fmt
 
 
 

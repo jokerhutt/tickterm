@@ -1,11 +1,12 @@
+from typing import Any
 from pandas import Timestamp
 from yfinance.base import FastInfo
 from models.asset import Asset
 from models.chart_data import ChartCache, ChartData, ChartPoint, TimeRange, Timeframe
+from models.financials import BalanceSheet, CashFlowStatement, IncomeStatement, TickerFinancials
 from models.news_item import NewsItem
+import math
 import yfinance as yf
-
-
 
 class MarketDataService:
     def get_asset(self, symbol: str) -> Asset :
@@ -29,6 +30,81 @@ class MarketDataService:
             market_cap = market_cap
         )
 
+
+
+    def finite(self, value: Any):
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return None
+        return number if math.isfinite(number) else None
+
+    def get_row(self, frame, name: str) -> list[float | None]:
+        columns = list(frame.columns)[:4]
+
+        if name not in frame.index:
+            return [None] * len(columns)
+
+        return [
+            self.finite(frame.loc[name, column])
+            for column in columns
+        ]
+
+    def get_financials(self, symbol: str) -> TickerFinancials:
+        ticker = yf.Ticker(symbol)
+
+        info = ticker.info
+        income_statement = ticker.income_stmt
+        balance_sheet = ticker.balance_sheet
+        cashflow_statement = ticker.cashflow
+
+        periods = []
+
+        if not income_statement.empty:
+            columns = list(income_statement.columns)[:4]
+
+            for column in columns:
+                periods.append(column.strftime("%Y"))
+
+        income = IncomeStatement(
+            periods = periods,
+            total_revenue=self.get_row(income_statement, "Total Revenue"),
+            gross_profit=self.get_row(income_statement, "Gross Profit"),
+            operating_income=self.get_row(income_statement, "Operating Income"),
+            net_income=self.get_row(income_statement, "Net Income")
+        )
+
+        balance = BalanceSheet(
+            periods = periods,
+            total_assets = self.get_row(balance_sheet, "Total Assets"),
+            cash_and_equivalents = self.get_row(balance_sheet, "Cash and Cash Equivalents"),
+            total_liabilities = self.get_row(balance_sheet, "Total Liabilities Net Minority Interest"),
+            total_debt = self.get_row(balance_sheet, "Total Debt"),
+            shareholder_equity = self.get_row(balance_sheet, "Stockholders Equity"),
+        )
+
+        cashflow = CashFlowStatement(
+            periods = periods,
+            operating_cash_flow=self.get_row(cashflow_statement, "Operating Cash Flow"),
+            capital_expenditure=self.get_row(cashflow_statement, "Capital Expenditure"),
+            free_cash_flow=self.get_row(cashflow_statement, "Free Cash Flow"),
+        )
+
+        market_cap = self.finite(info.get("marketCap"))
+        pe_ratio = self.finite(info.get("trailingPE"))
+
+        return TickerFinancials(market_cap = market_cap, pe_ratio = pe_ratio, income = income, balance = balance, cashflow = cashflow)
+
+
+
+
+
+
+
+
+
+
+ 
 
     def update_intraday_cache(self, symbol: str, cache: ChartCache) -> ChartCache:
         ticker = yf.Ticker(symbol)
@@ -75,21 +151,8 @@ class MarketDataService:
 
     def get_chart(self, symbol: str, time_range: TimeRange) -> ChartData :
         ticker = yf.Ticker(symbol)
-
         period = time_range.value
-
-        interval = "1d"
-
-        match (time_range) :
-            case TimeRange.INTRADAY :
-                interval = "1m"
-            case TimeRange.HOURLY :
-                interval = "1h"
-            case TimeRange.DAILY :
-                interval = "1d"
-            case TimeRange.LONGTERM :
-                interval = "1wk"
-
+        interval = time_range.interval
 
         history = ticker.history(period=period, interval = interval)
 
