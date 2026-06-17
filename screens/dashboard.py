@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Input
 from yfinance.utils import relativedelta
@@ -82,10 +82,11 @@ class DashboardScreen(Screen[None]):
 
     #sidebar {{
         background: {ROSE_PINE["surface"]};
-        width: 40;
+        width: 35;
     }}
 
     #content {{
+        layout: vertical;
         height: 1fr;
     }}
 
@@ -109,17 +110,16 @@ class DashboardScreen(Screen[None]):
         height: 1fr;
     }}
 
-    #financials {{
+    #vscroll {{
         height: 1fr;
         display: none;
+        overflow-y: auto;
     }}
+
+    #financials {{}}
 
     #news {{
         height: 8;
-    }}
-
-    #command {{
-        height: 3;
     }}
 
     """
@@ -165,6 +165,12 @@ class DashboardScreen(Screen[None]):
         next_refresh = max(0, 60 - age)
         chart = self.query_one("#chart", Chart)
         chart.update_refresh_timer(next_refresh)
+
+    def load_symbol(self, symbol: str) :
+        self.assets[symbol] = self.service.get_asset(symbol)
+
+
+
         
 
     def on_mount(self) -> None:
@@ -308,10 +314,10 @@ class DashboardScreen(Screen[None]):
     def action_toggle_view(self) -> None:
         self.show_financials = not self.show_financials
         chart = self.query_one("#chart", Chart)
-        financials = self.query_one("#financials", Financials)
+        vscroll = self.query_one("#vscroll", VerticalScroll)
 
         chart.display = not self.show_financials
-        financials.display = self.show_financials
+        vscroll.display = self.show_financials
 
     def compose(self):
         yield TickerBar(id="ticker")
@@ -327,11 +333,9 @@ class DashboardScreen(Screen[None]):
                 yield Summary(id="summary")
                 with Container(id = "content"):
                     yield Chart(id="chart")
-                    yield Financials(id = "financials")
+                    with VerticalScroll(id="vscroll"):
+                        yield Financials(id = "financials")
                 yield News(id="news")
-
-        yield Input(placeholder="Command...", id="command")
-
         
 
 
