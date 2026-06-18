@@ -155,7 +155,9 @@ class DashboardScreen(Screen[None]):
         self.query_one("#summary", Summary).set_asset(self.assets[self.current_symbol])
         self.query_one("#ticker", TickerBar).set_assets(list(self.assets.values()))
         self.query_one("#watchlist", WatchList).set_assets(list(self.assets.values()))
-        self.query_one("#chart", Chart).set_chart_data(self.get_chart_view(),self.chart_range, self.reference_lines)
+
+        cache = self.charts[self.current_symbol]
+        self.query_one("#chart", Chart).set_chart_data(cache.get_chart_view(self.chart_range),self.chart_range, self.reference_lines)
 
     def update_chart_timer(self) -> None:
         age = int(time.time() - self.last_refresh)
@@ -202,7 +204,9 @@ class DashboardScreen(Screen[None]):
 
         # current stuffs
         current_asset = self.assets[self.current_symbol]
-        current_chart = self.get_chart_view()
+
+        cache = self.charts[self.current_symbol]
+        current_chart = cache.get_chart_view(self.chart_range)
         current_news = self.news_items[self.current_symbol]
 
         # textual stuffs
@@ -220,51 +224,6 @@ class DashboardScreen(Screen[None]):
         chart.set_chart_data(current_chart, self.chart_range, self.reference_lines)
         financials.set_data(self.current_symbol, self.financials[self.current_symbol])
         news.set_news(current_news)
-
-
-    def filter_chart(self, chart: ChartData | None, cutoff: datetime) -> ChartData | None :
-        if chart is None :
-            return None
-
-        return chart.last(cutoff)
-
-    def get_chart_view(self) -> ChartData | None:
-
-        symbol = self.current_symbol
-        timeframe = self.chart_range
-
-        cache = self.charts[symbol]
-
-        match timeframe:
-            case Timeframe.ONE_HOUR:
-                return self.filter_chart(
-                    cache.intraday,
-                    datetime.now(cache.intraday.points[-1].timestamp.tzinfo) - timedelta(hours=1)
-                ) if cache.intraday else None
-
-            case Timeframe.ONE_DAY:
-                return cache.intraday
-
-            case Timeframe.ONE_WEEK:
-                return cache.hourly
-
-            case Timeframe.ONE_MONTH:
-                return self.filter_chart(
-                    cache.daily,
-                    datetime.now(cache.daily.points[-1].timestamp.tzinfo) - relativedelta(months=1)
-                ) if cache.daily else None
-
-            case Timeframe.ONE_YEAR:
-                return self.filter_chart(
-                    cache.daily,
-                    datetime.now(cache.daily.points[-1].timestamp.tzinfo) - relativedelta(years=1)
-                ) if cache.daily else None
-
-            case Timeframe.FIVE_YEARS:
-                return cache.daily
-
-            case Timeframe.MAX:
-                return cache.longterm
 
     def action_add_ticker(self) -> None:
         self.app.push_screen(
@@ -291,12 +250,14 @@ class DashboardScreen(Screen[None]):
         self.chart_range = timeframes[next_index]
 
         chart = self.query_one("#chart", Chart)
-        chart.set_chart_data(self.get_chart_view(), self.chart_range, self.reference_lines)
+        cache = self.charts[self.current_symbol]
+        chart.set_chart_data(cache.get_chart_view(self.chart_range), self.chart_range, self.reference_lines)
 
     def action_toggle_reference_lines(self) -> None:
         self.reference_lines = not self.reference_lines
         chart = self.query_one("#chart", Chart)
-        chart.set_chart_data(self.get_chart_view(), self.chart_range, self.reference_lines)
+        cache = self.charts[self.current_symbol]
+        chart.set_chart_data(cache.get_chart_view(self.chart_range), self.chart_range, self.reference_lines)
 
     def action_toggle_view(self) -> None:
         self.show_financials = not self.show_financials

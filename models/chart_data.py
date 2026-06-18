@@ -1,6 +1,8 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
+
+from dateutil.relativedelta import relativedelta
 
 class Timeframe(Enum):
     ONE_HOUR = "1h"
@@ -75,6 +77,45 @@ class ChartCache:
     hourly: ChartData | None = None
     daily: ChartData | None = None
     longterm: ChartData | None = None
+
+    def filter_chart(self, chart: ChartData | None, cutoff: datetime) -> ChartData | None :
+        if chart is None :
+            return None
+
+        return chart.last(cutoff)
+
+    def get_chart_view(self, timeframe: Timeframe) -> ChartData | None:
+
+        match timeframe:
+            case Timeframe.ONE_HOUR:
+                return self.filter_chart(
+                    self.intraday,
+                    datetime.now(self.intraday.points[-1].timestamp.tzinfo) - timedelta(hours=1)
+                ) if self.intraday else None
+
+            case Timeframe.ONE_DAY:
+                return self.intraday
+
+            case Timeframe.ONE_WEEK:
+                return self.hourly
+
+            case Timeframe.ONE_MONTH:
+                return self.filter_chart(
+                    self.daily,
+                    datetime.now(self.daily.points[-1].timestamp.tzinfo) - relativedelta(months=1)
+                ) if self.daily else None
+
+            case Timeframe.ONE_YEAR:
+                return self.filter_chart(
+                    self.daily,
+                    datetime.now(self.daily.points[-1].timestamp.tzinfo) - relativedelta(years=1)
+                ) if self.daily else None
+
+            case Timeframe.FIVE_YEARS:
+                return self.daily
+
+            case Timeframe.MAX:
+                return cache.longterm
 
 
 
