@@ -45,6 +45,13 @@ class Store :
     def remove_from_watchlist(self, symbol: str):
         self.watchlist.remove(symbol)
         self.repo.remove(symbol)
+        self.assets.pop(symbol, None)
+        self.financials.pop(symbol, None)
+        self.charts.pop(symbol, None)
+        self.news_items.pop(symbol, None)
+
+        if self.current_symbol == symbol :
+            self.current_symbol = self.watchlist[0] if self.watchlist else ""
 
     # NEWS
     def get_news(self, symbol: str) -> list[NewsItem] :

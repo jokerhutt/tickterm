@@ -57,6 +57,7 @@ class DashboardScreen(Screen[None]):
         Binding("g", "cycle_timeframe", "Cycle Timeframe"),
         Binding("l", "toggle_reference_lines", "Toggle Reference Lines"),
         Binding("a", "add_ticker", "Add Ticker"),
+        Binding("d", "remove_ticker", "Remove Ticker"),
         Binding("v", "toggle_view", "Toggle View")
     ]
 
@@ -146,13 +147,36 @@ class DashboardScreen(Screen[None]):
         tickers = self.query_one("#ticker", TickerBar)
         tickers.set_assets(assets, cache)
 
+
+    # -- Refresh UI Helpers --
+    def refresh_sidebar(self) -> None:
+        self.set_watchlist_node(self.store.get_assets())
+        self.set_tickers_node(
+            self.store.get_assets(),
+            self.store.get_charts(),
+        )
+
+    def refresh_current(self) -> None:
+        self.set_summary_node(self.store.get_current_asset())
+
+        self.set_chart_node(
+            self.store.get_current_chart().get_chart_view(self.chart_range),
+            self.chart_range,
+            self.reference_lines,
+        )
+
+        self.set_financials_node(
+            self.store.get_current_symbol(),
+            self.store.get_current_financials(),
+        )
+
+        self.set_news_node(
+            self.store.get_current_news()
+        )
+
     def on_symbol_selected(self, event: SymbolSelected) -> None:
         self.store.set_current_symbol(event.symbol)
-        self.set_summary_node(self.store.get_current_asset())
-        self.set_chart_node(self.store.get_current_chart().intraday, self.chart_range, self.reference_lines)
-        self.set_financials_node(self.store.get_current_symbol(), self.store.get_current_financials())
-        self.set_news_node(self.store.get_current_news())
-
+        self.refresh_current()
 
     # -- UI Updates --
     def refresh_intraday(self) -> None:
@@ -162,10 +186,8 @@ class DashboardScreen(Screen[None]):
             self.store.set_chart(symbol = symbol, chart_cache = updated_cache)
         self.last_refresh = time.time()
 
-        self.set_summary_node(self.store.get_current_asset())
-        self.set_watchlist_node(self.store.get_assets())
-        self.set_tickers_node(self.store.get_assets(), self.store.get_charts())
-        self.set_chart_node(self.store.get_current_chart().get_chart_view(self.chart_range), self.chart_range, self.reference_lines)
+        self.refresh_sidebar()
+        self.refresh_current()
 
     def update_chart_timer(self) -> None:
         age = int(time.time() - self.last_refresh)
@@ -209,12 +231,9 @@ class DashboardScreen(Screen[None]):
         for symbol in self.store.get_watchlist():
             self.load_symbol(symbol)
 
-        self.set_summary_node(self.store.get_current_asset())
-        self.set_tickers_node(self.store.get_assets(), self.store.get_charts())
-        self.set_watchlist_node(self.store.get_assets())
-        self.set_chart_node(self.store.get_current_chart().intraday, self.chart_range, self.reference_lines)
-        self.set_financials_node(self.store.get_current_symbol(), self.store.get_current_financials())
-        self.set_news_node(self.store.get_current_news())
+        self.refresh_sidebar()
+        self.refresh_current()
+
 
     def action_add_ticker(self) -> None:
         self.app.push_screen(
@@ -222,14 +241,28 @@ class DashboardScreen(Screen[None]):
             self.on_ticker_added
         )
 
+    def action_remove_ticker(self) -> None:
+        symbol = self.store.get_current_symbol()
+
+        if not symbol:
+            return
+
+        if len(self.store.get_watchlist()) <= 1 :
+            return
+
+        self.store.remove_from_watchlist(symbol)
+
+        self.refresh_sidebar()
+        self.refresh_current()
+
+
     def on_ticker_added(self, symbol: str | None) -> None:
         if symbol is None or symbol in self.store.get_watchlist():
             return
 
         self.store.add_to_watchlist(symbol)
         self.load_symbol(symbol)
-        self.set_tickers_node(self.store.get_assets(), self.store.get_charts())
-        self.set_watchlist_node(self.store.get_assets())
+        self.refresh_sidebar()
 
 
     def action_cycle_timeframe(self) -> None:
