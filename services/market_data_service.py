@@ -1,7 +1,7 @@
 # ∴ Jokerhut / services/market_data_service.py
 
 
-from typing import Any
+from typing import Any, cast
 from pandas import Timestamp
 from yfinance.base import FastInfo
 from models.asset import Asset
@@ -35,17 +35,6 @@ class MarketDataService:
             market_cap = market_cap
         )
 
-
-
-    def finite(self, value: Any):
-        try:
-            number = float(value)
-        except (TypeError, ValueError):
-            return None
-
-        return number if math.isfinite(number) else None
-    
-
     def get_row(self, frame, name: str) -> list[float | None]:
         columns = list(frame.columns)[:4]
 
@@ -53,7 +42,7 @@ class MarketDataService:
             return [None] * len(columns)
 
         return [
-            self.finite(frame.loc[name, column])
+            calculations.finite(frame.loc[name, column])
             for column in columns
         ]
 
@@ -97,76 +86,47 @@ class MarketDataService:
             free_cash_flow=self.get_row(cashflow_statement, "Free Cash Flow"),
         )
 
-        # valuation
-        market_cap = self.finite(info.get("marketCap"))
-        pe_ratio = self.finite(info.get("trailingPE"))
-        forward_pe = self.finite(info.get("forwardPE"))
-        peg_ratio = self.finite(info.get("trailingPegRatio"))
-        price_to_book=self.finite(info.get("priceToBook"))
-        price_to_sales=self.finite(info.get("priceToSalesTrailing12Months"))
-        eps = self.finite(info.get("trailingEps"))
-        beta=self.finite(info.get("beta"))
-
-        # profitability
-        gross_margin=self.finite(info.get("grossMargins"))
-        operating_margin=self.finite(info.get("operatingMargins"))
-        profit_margin=self.finite(info.get("profitMargins"))
-        roe = self.finite(info.get("returnOnEquity"))
-        roa = self.finite(info.get("returnOnAssets"))
-
-        # growth
-        total_revenue = self.finite(info.get("totalRevenue"))
-        revenue_growth=self.finite(info.get("revenueGrowth"))
-        earnings_growth=self.finite(info.get("earningsGrowth"))
-        free_cash_flow = self.finite(info.get("freeCashflow"))
-
-        # health
-        total_cash = self.finite(info.get("totalCash"))
-        total_debt = self.finite(info.get("totalDebt"))
-        debt_to_equity=self.finite(info.get("debtToEquity"))
-        current_ratio=self.finite(info.get("currentRatio"))
-        quick_ratio=self.finite(info.get("quickRatio"))
-
-        # market
-        week_52_high = self.finite(info.get("fiftyTwoWeekHigh"))
-        week_52_low = self.finite(info.get("fiftyTwoWeekLow"))
-        dividend_yield = self.finite(info.get("dividendYield"))
-
+        # what a fat chunk
         return TickerFinancials(
-                market_cap = market_cap, 
-                pe_ratio = pe_ratio, 
-                forward_pe = forward_pe,
-                peg_ratio = peg_ratio,
-                price_to_book = price_to_book,
-                price_to_sales = price_to_sales,
-                eps = eps,
-                beta = beta,
+            # valuation
+            market_cap=calculations.finite(info.get("marketCap")),
+            pe_ratio=calculations.finite(info.get("trailingPE")),
+            forward_pe=calculations.finite(info.get("forwardPE")),
+            peg_ratio=calculations.finite(info.get("trailingPegRatio")),
+            price_to_book=calculations.finite(info.get("priceToBook")),
+            price_to_sales=calculations.finite(info.get("priceToSalesTrailing12Months")),
+            eps=calculations.finite(info.get("trailingEps")),
+            beta=calculations.finite(info.get("beta")),
 
-                gross_margin = gross_margin,
-                operating_margin = operating_margin,
-                profit_margin = profit_margin,
-                roe = roe,
-                roa = roa,
+            # profitability
+            gross_margin=calculations.finite(info.get("grossMargins")),
+            operating_margin=calculations.finite(info.get("operatingMargins")),
+            profit_margin=calculations.finite(info.get("profitMargins")),
+            roe=calculations.finite(info.get("returnOnEquity")),
+            roa=calculations.finite(info.get("returnOnAssets")),
 
-                total_revenue = total_revenue,
-                revenue_growth = revenue_growth,
-                earnings_growth = earnings_growth,
-                free_cash_flow = free_cash_flow,
-                
+            # growth 
+            total_revenue=calculations.finite(info.get("totalRevenue")),
+            revenue_growth=calculations.finite(info.get("revenueGrowth")),
+            earnings_growth=calculations.finite(info.get("earningsGrowth")),
+            free_cash_flow=calculations.finite(info.get("freeCashflow")),
 
-                total_cash = total_cash,
-                total_debt = total_debt,
-                debt_to_equity = debt_to_equity,
-                current_ratio = current_ratio,
-                quick_ratio = quick_ratio,
+            # health
+            total_cash=calculations.finite(info.get("totalCash")),
+            total_debt=calculations.finite(info.get("totalDebt")),
+            debt_to_equity=calculations.finite(info.get("debtToEquity")),
+            current_ratio=calculations.finite(info.get("currentRatio")),
+            quick_ratio=calculations.finite(info.get("quickRatio")),
 
-                week_52_high = week_52_high,
-                week_52_low = week_52_low,
-                dividend_yield = dividend_yield,
+            # market
+            week_52_high=calculations.finite(info.get("fiftyTwoWeekHigh")),
+            week_52_low=calculations.finite(info.get("fiftyTwoWeekLow")),
+            dividend_yield=calculations.finite(info.get("dividendYield")),
 
-                income = income, 
-                balance = balance, 
-                cashflow = cashflow,
+            # statements
+            income=income,
+            balance=balance,
+            cashflow=cashflow,
         )
 
 
@@ -182,8 +142,8 @@ class MarketDataService:
         existing = cache.intraday.points
         known = {point.timestamp for point in existing}
 
-        for timestamp, row in history.iterrows():
-            dt = timestamp.to_pydatetime()
+        for dt in history.index:
+            dt = cast(Timestamp, dt).to_pydatetime()
 
             if dt not in known:
                 existing.append(
