@@ -61,19 +61,14 @@ class Chart(PlotextPlot):
         # title
         self.plt.title(f"{chart_data.symbol} • {chart_data.timerange} • {timeframe}")
 
+        # cool stats
+        day_open = prices[0]
+        current_price = prices[-1]
+        day_high = max(prices)
+        day_low = min(prices)
+
         # reference lines (open, low, high, curr)
         if reference_lines :
-            day_open = prices[0]
-            current_price = prices[-1]
-            day_high = max(prices)
-            day_low = min(prices)
-
-            self.plt.plot(
-                range(len(prices)),
-                prices,
-                marker="braille",
-                color = line_color
-            )
 
             self.plt.hline(day_open, color="yellow")
             self.plt.hline(current_price, color="white")

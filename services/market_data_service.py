@@ -142,18 +142,15 @@ class MarketDataService:
         existing = cache.intraday.points
         known = {point.timestamp for point in existing}
 
-        for dt in history.index:
+        for dt, close in history["Close"].items():
             dt = cast(Timestamp, dt).to_pydatetime()
 
-            if dt not in known:
-                existing.append(
-                    ChartPoint(
-                        timestamp = dt,
-                        price = float(row["Close"])
-                    )
+            existing.append(
+                ChartPoint(
+                    timestamp=dt,
+                    price=float(cast(float, close))
                 )
-                known.add(dt)
-
+            )
         return cache
 
     def update_asset(self, symbol: str, asset: Asset) -> Asset:
