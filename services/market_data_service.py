@@ -77,7 +77,7 @@ class MarketDataService:
         balance = BalanceSheet(
             periods = periods,
             total_assets = self.get_row(balance_sheet, "Total Assets"),
-            cash_and_equivalents = self.get_row(balance_sheet, "Cash and Cash Equivalents"),
+            cash_and_equivalents = self.get_row(balance_sheet, "Cash And Cash Equivalents"),
             total_liabilities = self.get_row(balance_sheet, "Total Liabilities Net Minority Interest"),
             total_debt = self.get_row(balance_sheet, "Total Debt"),
             shareholder_equity = self.get_row(balance_sheet, "Stockholders Equity"),
