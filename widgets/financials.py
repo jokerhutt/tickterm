@@ -8,7 +8,7 @@ from rich.table import Table
 from rich.text import Text
 from textual.widgets import Static
 from models.financials import TickerFinancials
-from util.formatters import format_number, format_ratio, format_percent
+from util.formatters import format_money, format_number, format_percentage_points, format_ratio, format_percent
 
 from themes import ROSE_PINE
 
@@ -31,23 +31,52 @@ class Financials(Static):
 
         valuation = [
             ("Market Cap", format_number(financials.market_cap)),
-            ("P/E Ratio", format_ratio(financials.pe_ratio)),
-            ("Revenue", format_number(financials.income.total_revenue[0])),
-            ("Net Income", format_number(financials.income.net_income[0]))
+            ("Trailing P/E", format_ratio(financials.pe_ratio)),
+            ("Forward P/E", format_ratio(financials.forward_pe)),
+            ("PEG", format_ratio(financials.peg_ratio)),
+            ("Price/Book", format_ratio(financials.price_to_book)),
+            ("Price/Sales", format_ratio(financials.price_to_sales)),
+            ("EPS (ttm)", format_money(financials.eps)),
+            ("Beta", format_ratio(financials.beta)),
         ]
-
+        profitability = [
+            ("Gross Margin", format_percent(financials.gross_margin)),
+            ("Oper. Margin", format_percent(financials.operating_margin)),
+            ("Profit Margin", format_percent(financials.profit_margin)),
+            ("ROE", format_percent(financials.roe)),
+        ]
+        growth = [
+            ("Revenue (ttm)", format_number(financials.total_revenue)),
+            ("Rev. Growth", format_percent(financials.revenue_growth)),
+            ("Earnings Growth", format_percent(financials.earnings_growth)),
+            ("Free Cashflow", format_number(financials.free_cash_flow)),
+        ]
         health = [
-            ("Assets", format_number(financials.balance.total_assets[0])),
-            ("Liabilities", format_number(financials.balance.total_liabilities[0])),
-            ("Debt", format_number(financials.balance.total_debt[0])),
-            ("Equity", format_number(financials.balance.shareholder_equity[0]))
+            ("Total Cash", format_number(financials.total_cash)),
+            ("Total Debt", format_number(financials.total_debt)),
+            ("Debt/Equity", format_ratio(financials.debt_to_equity)),
+            ("Current Ratio", format_ratio(financials.current_ratio)),
+        ]
+        market = [
+            ("52w High", format_money(financials.week_52_high)),
+            ("52w Low", format_money(financials.week_52_low)),
+            ("Dividend Yield", format_percentage_points(financials.dividend_yield)),
         ]
 
         body = Group(
-            self.stat_group("Valuation", valuation),
+            self.stat_group("Valuation", valuation, columns = 4),
             Text(""),
 
-            self.stat_group("Balance Sheet Snapshot", health),
+            self.stat_group("Profitability", profitability, columns = 4),
+            Text(""),
+
+            self.stat_group("Growth & Cash", growth, columns = 4),
+            Text(""),
+
+            self.stat_group("Balance Sheet Health", health, columns = 4),
+            Text(""),
+
+            self.stat_group("Market", market, columns = 4),
             Text(""),
 
             self.statement_table(
@@ -104,7 +133,7 @@ class Financials(Static):
         rows: list[tuple[str, list[float | None]]]
     ) -> Table:
 
-        table = Table.grid(padding=(0, 1))
+        table = Table.grid(padding=(0, 12))
 
         table.add_column(width=self.LABEL_WIDTH)
 
@@ -136,10 +165,10 @@ class Financials(Static):
 
         return table
 
-    def stat_group(self, title: str, rows: list[tuple[str, str]]) -> Group:
+    def stat_group(self, title: str, rows: list[tuple[str, str]], columns: int = 4) -> Group:
         grid = Table.grid(expand = True, padding = (0, 2))
 
-        for _ in range(4):
+        for _ in range(columns):
             grid.add_column(ratio = 1)
 
         cells = []

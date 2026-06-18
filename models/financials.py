@@ -35,8 +35,36 @@ class CashFlowStatement:
 
 @dataclass
 class TickerFinancials:
-    market_cap: int | None
+    market_cap: float | None
+
     pe_ratio: float | None
+    forward_pe: float | None
+    peg_ratio: float | None
+    price_to_book: float | None
+    price_to_sales: float | None
+    eps: float | None
+    beta: float | None
+
+    gross_margin: float | None
+    operating_margin: float | None
+    profit_margin: float | None
+    roa: float | None
+    roe: float | None
+
+    total_revenue: float | None
+    revenue_growth: float | None
+    earnings_growth: float | None
+    free_cash_flow: float | None
+
+    debt_to_equity: float | None
+    current_ratio: float | None
+    quick_ratio: float | None
+    total_cash: float | None
+    total_debt: float | None
+
+    week_52_high: float | None
+    week_52_low: float | None
+    dividend_yield: float | None
 
     income: IncomeStatement
     balance: BalanceSheet

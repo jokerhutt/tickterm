@@ -42,7 +42,9 @@ class MarketDataService:
             number = float(value)
         except (TypeError, ValueError):
             return None
+
         return number if math.isfinite(number) else None
+    
 
     def get_row(self, frame, name: str) -> list[float | None]:
         columns = list(frame.columns)[:4]
@@ -95,10 +97,77 @@ class MarketDataService:
             free_cash_flow=self.get_row(cashflow_statement, "Free Cash Flow"),
         )
 
+        # valuation
         market_cap = self.finite(info.get("marketCap"))
         pe_ratio = self.finite(info.get("trailingPE"))
+        forward_pe = self.finite(info.get("forwardPE"))
+        peg_ratio = self.finite(info.get("trailingPegRatio"))
+        price_to_book=self.finite(info.get("priceToBook"))
+        price_to_sales=self.finite(info.get("priceToSalesTrailing12Months"))
+        eps = self.finite(info.get("trailingEps"))
+        beta=self.finite(info.get("beta"))
 
-        return TickerFinancials(market_cap = market_cap, pe_ratio = pe_ratio, income = income, balance = balance, cashflow = cashflow)
+        # profitability
+        gross_margin=self.finite(info.get("grossMargins"))
+        operating_margin=self.finite(info.get("operatingMargins"))
+        profit_margin=self.finite(info.get("profitMargins"))
+        roe = self.finite(info.get("returnOnEquity"))
+        roa = self.finite(info.get("returnOnAssets"))
+
+        # growth
+        total_revenue = self.finite(info.get("totalRevenue"))
+        revenue_growth=self.finite(info.get("revenueGrowth"))
+        earnings_growth=self.finite(info.get("earningsGrowth"))
+        free_cash_flow = self.finite(info.get("freeCashflow"))
+
+        # health
+        total_cash = self.finite(info.get("totalCash"))
+        total_debt = self.finite(info.get("totalDebt"))
+        debt_to_equity=self.finite(info.get("debtToEquity"))
+        current_ratio=self.finite(info.get("currentRatio"))
+        quick_ratio=self.finite(info.get("quickRatio"))
+
+        # market
+        week_52_high = self.finite(info.get("fiftyTwoWeekHigh"))
+        week_52_low = self.finite(info.get("fiftyTwoWeekLow"))
+        dividend_yield = self.finite(info.get("dividendYield"))
+
+        return TickerFinancials(
+                market_cap = market_cap, 
+                pe_ratio = pe_ratio, 
+                forward_pe = forward_pe,
+                peg_ratio = peg_ratio,
+                price_to_book = price_to_book,
+                price_to_sales = price_to_sales,
+                eps = eps,
+                beta = beta,
+
+                gross_margin = gross_margin,
+                operating_margin = operating_margin,
+                profit_margin = profit_margin,
+                roe = roe,
+                roa = roa,
+
+                total_revenue = total_revenue,
+                revenue_growth = revenue_growth,
+                earnings_growth = earnings_growth,
+                free_cash_flow = free_cash_flow,
+                
+
+                total_cash = total_cash,
+                total_debt = total_debt,
+                debt_to_equity = debt_to_equity,
+                current_ratio = current_ratio,
+                quick_ratio = quick_ratio,
+
+                week_52_high = week_52_high,
+                week_52_low = week_52_low,
+                dividend_yield = dividend_yield,
+
+                income = income, 
+                balance = balance, 
+                cashflow = cashflow,
+        )
 
 
     def update_intraday_cache(self, symbol: str, cache: ChartCache) -> ChartCache:
