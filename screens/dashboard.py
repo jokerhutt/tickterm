@@ -158,13 +158,13 @@ class DashboardScreen(Screen[None]):
     def refresh_intraday(self) -> None:
         for symbol, cache in self.store.charts.items():
             self.store.set_asset(symbol, self.service.update_asset(symbol, self.store.get_asset(symbol)))
-            self.store.set_chart(symbol = symbol, chart_cache = cache)
+            updated_cache = self.service.update_intraday_cache(symbol, cache)
+            self.store.set_chart(symbol = symbol, chart_cache = updated_cache)
         self.last_refresh = time.time()
 
         self.set_summary_node(self.store.get_current_asset())
         self.set_watchlist_node(self.store.get_assets())
         self.set_tickers_node(self.store.get_assets())
-        self.store.set_chart(self.store.get_current_symbol(), self.store.get_current_chart())
         self.set_chart_node(self.store.get_current_chart().get_chart_view(self.chart_range), self.chart_range, self.reference_lines)
 
     def update_chart_timer(self) -> None:
