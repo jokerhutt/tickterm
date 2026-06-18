@@ -145,10 +145,13 @@ class MarketDataService:
         for dt, close in history["Close"].items():
             dt = cast(Timestamp, dt).to_pydatetime()
 
+            if dt in known:
+                continue
+
             existing.append(
                 ChartPoint(
                     timestamp=dt,
-                    price=float(cast(float, close))
+                    price=float(close),
                 )
             )
         return cache
