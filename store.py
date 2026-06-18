@@ -1,6 +1,7 @@
 # ∴ Jokerhut / store.py
 
 
+from db.watchlist_repository import WatchlistRepository
 from models.asset import Asset
 from models.chart_data import ChartCache, ChartData, Timeframe
 from models.financials import TickerFinancials
@@ -10,7 +11,16 @@ from models.news_item import NewsItem
 class Store :
 
     def __init__(self):
-        self.watchlist = ["AAPL", "MSFT", "NVDA"]
+        self.repo = WatchlistRepository()
+
+        self.watchlist = self.repo.get_all()
+
+        # some defaults if watchlist empty
+        if not self.watchlist:
+            self.watchlist = ["AAPL", "MSFT", "NVDA"]
+            for symbol in self.watchlist:
+                self.repo.add(symbol)
+
         self.assets = {}
         self.financials = {}
         self.charts = {}
@@ -28,8 +38,13 @@ class Store :
     def get_watchlist(self) -> list[str] :
         return self.watchlist
 
-    def add_to_watchlist(self, symbol: str) :
+    def add_to_watchlist(self, symbol: str):
+        self.repo.add(symbol)
         self.watchlist.append(symbol)
+
+    def remove_from_watchlist(self, symbol: str):
+        self.watchlist.remove(symbol)
+        self.repo.remove(symbol)
 
     # NEWS
     def get_news(self, symbol: str) -> list[NewsItem] :

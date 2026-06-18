@@ -226,6 +226,7 @@ class DashboardScreen(Screen[None]):
         if symbol is None or symbol in self.store.get_watchlist():
             return
 
+        self.store.add_to_watchlist(symbol)
         self.load_symbol(symbol)
         self.set_tickers_node(self.store.get_assets(), self.store.get_charts())
         self.set_watchlist_node(self.store.get_assets())

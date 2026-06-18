@@ -6,6 +6,7 @@ from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import DataTable, Header, Footer, Input, Static
 
+from db.database import init_db
 from screens.dashboard import DashboardScreen
 class TickTerm(App[None]):
     def compose(self) -> ComposeResult:
@@ -16,4 +17,5 @@ class TickTerm(App[None]):
 
 if __name__ == "__main__":
 
+    init_db()
     TickTerm().run()
