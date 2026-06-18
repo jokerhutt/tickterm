@@ -96,16 +96,6 @@ class MarketDataService:
         return TickerFinancials(market_cap = market_cap, pe_ratio = pe_ratio, income = income, balance = balance, cashflow = cashflow)
 
 
-
-
-
-
-
-
-
-
- 
-
     def update_intraday_cache(self, symbol: str, cache: ChartCache) -> ChartCache:
         ticker = yf.Ticker(symbol)
         period = "1d"

@@ -157,9 +157,6 @@ class DashboardScreen(Screen[None]):
         self.query_one("#watchlist", WatchList).set_assets(list(self.assets.values()))
         self.query_one("#chart", Chart).set_chart_data(self.get_chart_view(),self.chart_range, self.reference_lines)
 
-
-
-
     def update_chart_timer(self) -> None:
         age = int(time.time() - self.last_refresh)
         next_refresh = max(0, 60 - age)
@@ -167,10 +164,23 @@ class DashboardScreen(Screen[None]):
         chart.update_refresh_timer(next_refresh)
 
     def load_symbol(self, symbol: str) :
+
+        # load quick info
         self.assets[symbol] = self.service.get_asset(symbol)
 
+        # load chart points
+        self.charts[symbol] = ChartCache(
+            intraday = self.service.get_chart(symbol, TimeRange.INTRADAY),
+            hourly = self.service.get_chart(symbol, TimeRange.HOURLY),
+            daily = self.service.get_chart(symbol, TimeRange.DAILY),
+            longterm = self.service.get_chart(symbol, TimeRange.LONGTERM)
+        )
 
+        # load news
+        self.news_items[symbol] = self.service.get_news(symbol)
 
+        # load financial statements
+        self.financials[symbol] = self.service.get_financials(symbol)
         
 
     def on_mount(self) -> None:
@@ -188,19 +198,7 @@ class DashboardScreen(Screen[None]):
         self.current_symbol = self.watchlist[0]
         self.chart_range = Timeframe.ONE_DAY
         for symbol in self.watchlist:
-            self.assets[symbol] = self.service.get_asset(symbol)
-        for symbol in self.watchlist:
-            self.charts[symbol] = ChartCache(
-                intraday = self.service.get_chart(symbol, TimeRange.INTRADAY),
-                hourly = self.service.get_chart(symbol, TimeRange.HOURLY),
-                daily = self.service.get_chart(symbol, TimeRange.DAILY),
-                longterm = self.service.get_chart(symbol, TimeRange.LONGTERM)
-            )
-        for symbol in self.watchlist:
-            self.news_items[symbol] = self.service.get_news(symbol)
-
-        for symbol in self.watchlist:
-            self.financials[symbol] = self.service.get_financials(symbol)
+            self.load_symbol(symbol)
 
         # current stuffs
         current_asset = self.assets[self.current_symbol]
@@ -273,24 +271,13 @@ class DashboardScreen(Screen[None]):
             AddTickerModal(),
             self.on_ticker_added
         )
-    
+
+
     def on_ticker_added(self, symbol: str | None) -> None:
         if symbol is None or symbol in self.watchlist:
             return
 
-        self.watchlist.append(symbol)
-
-        self.assets[symbol] = self.service.get_asset(symbol)
-
-        self.charts[symbol] = ChartCache(
-            intraday=self.service.get_chart(symbol, TimeRange.INTRADAY),
-            hourly=self.service.get_chart(symbol, TimeRange.HOURLY),
-            daily=self.service.get_chart(symbol, TimeRange.DAILY),
-            longterm=self.service.get_chart(symbol, TimeRange.LONGTERM),
-        )
-
-        self.financials[symbol] = self.service.get_financials(symbol)
-        self.news_items[symbol] = self.service.get_news(symbol)
+        self.load_symbol(symbol)
 
         self.query_one("#ticker", TickerBar).set_assets(list(self.assets.values()))
         self.query_one("#watchlist", WatchList).set_assets(list(self.assets.values()))
