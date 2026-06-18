@@ -68,6 +68,9 @@ class Store :
     def get_current_chart(self) -> ChartCache | None :
         return self.charts[self.current_symbol]
 
+    def get_charts(self) -> dict[str, ChartCache] :
+        return self.charts
+
     def get_chart(self, symbol: str) -> ChartCache | None :
         return self.charts[symbol]
 

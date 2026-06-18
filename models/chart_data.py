@@ -74,6 +74,24 @@ class ChartData:
             points = filtered_points
         )
 
+    # so you can split into like buckets of 1hr or whatever
+    def bucket(self, size: int) -> "ChartData":
+        if size <= 1:
+            return self
+
+        bucketed = []
+
+        for start in range(0, len(self.points), size):
+            chunk = self.points[start:start + size]
+            if chunk:
+                bucketed.append(chunk[-1])
+
+        return ChartData(
+            symbol=self.symbol,
+            timerange=self.timerange,
+            points=bucketed,
+        )
+
 @dataclass
 class ChartCache:
     intraday: ChartData | None = None

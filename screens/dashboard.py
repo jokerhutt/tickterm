@@ -142,9 +142,9 @@ class DashboardScreen(Screen[None]):
         watchlist = self.query_one("#watchlist", WatchList)
         watchlist.set_assets(assets)
 
-    def set_tickers_node(self, assets: list[Asset]) :
+    def set_tickers_node(self, assets: list[Asset], cache: dict[str, ChartCache]) :
         tickers = self.query_one("#ticker", TickerBar)
-        tickers.set_assets(assets)
+        tickers.set_assets(assets, cache)
 
     def on_symbol_selected(self, event: SymbolSelected) -> None:
         self.store.set_current_symbol(event.symbol)
@@ -164,7 +164,7 @@ class DashboardScreen(Screen[None]):
 
         self.set_summary_node(self.store.get_current_asset())
         self.set_watchlist_node(self.store.get_assets())
-        self.set_tickers_node(self.store.get_assets())
+        self.set_tickers_node(self.store.get_assets(), self.store.get_charts())
         self.set_chart_node(self.store.get_current_chart().get_chart_view(self.chart_range), self.chart_range, self.reference_lines)
 
     def update_chart_timer(self) -> None:
@@ -210,7 +210,7 @@ class DashboardScreen(Screen[None]):
             self.load_symbol(symbol)
 
         self.set_summary_node(self.store.get_current_asset())
-        self.set_tickers_node(self.store.get_assets())
+        self.set_tickers_node(self.store.get_assets(), self.store.get_charts())
         self.set_watchlist_node(self.store.get_assets())
         self.set_chart_node(self.store.get_current_chart().intraday, self.chart_range, self.reference_lines)
         self.set_financials_node(self.store.get_current_symbol(), self.store.get_current_financials())
@@ -227,7 +227,7 @@ class DashboardScreen(Screen[None]):
             return
 
         self.load_symbol(symbol)
-        self.set_tickers_node(self.store.get_assets())
+        self.set_tickers_node(self.store.get_assets(), self.store.get_charts())
         self.set_watchlist_node(self.store.get_assets())
 
 
