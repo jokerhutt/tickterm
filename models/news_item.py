@@ -1,3 +1,6 @@
+# ∴ Jokerhut / models/news_item.py
+
+
 from dataclasses import dataclass
 
 @dataclass

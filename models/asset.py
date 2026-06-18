@@ -1,3 +1,6 @@
+# ∴ Jokerhut / models/asset.py
+
+
 from dataclasses import dataclass
 
 @dataclass

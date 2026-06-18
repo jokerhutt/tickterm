@@ -1,3 +1,6 @@
+# ∴ Jokerhut / models/financials.py
+
+
 from dataclasses import dataclass
 
 @dataclass

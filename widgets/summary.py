@@ -1,3 +1,6 @@
+# ∴ Jokerhut / widgets/summary.py
+
+
 from textual.widgets import Static
 from rich.panel import Panel
 from rich.table import Table

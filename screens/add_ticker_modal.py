@@ -1,3 +1,6 @@
+# ∴ Jokerhut / screens/add_ticker_modal.py
+
+
 from textual.screen import ModalScreen
 from textual.widgets import Input, Label
 from textual.containers import Vertical

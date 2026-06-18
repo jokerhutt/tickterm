@@ -1,3 +1,6 @@
+# ∴ Jokerhut / models/chart_data.py
+
+
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
@@ -115,7 +118,7 @@ class ChartCache:
                 return self.daily
 
             case Timeframe.MAX:
-                return cache.longterm
+                return self.longterm
 
 
 

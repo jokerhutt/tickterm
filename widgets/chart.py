@@ -1,3 +1,6 @@
+# ∴ Jokerhut / widgets/chart.py
+
+
 from rich.panel import Panel
 from textual.widgets import Static
 from textual import log

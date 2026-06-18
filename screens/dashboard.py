@@ -1,13 +1,12 @@
-from datetime import datetime, timedelta
+# ∴ Jokerhut / screens/dashboard.py
+
+
+from store import Store
+import time
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
-from textual.widgets import Input
-from yfinance.utils import relativedelta
-
 from messages.symbol_selected import SymbolSelected
-import time
-from mocks import mock_tickers
 from models.asset import Asset
 from models.chart_data import ChartCache, ChartData, TimeRange, Timeframe
 from models.financials import TickerFinancials
@@ -26,16 +25,11 @@ class DashboardScreen(Screen[None]):
 
     theme = ROSE_PINE
 
-    assets: dict[str, Asset]
-    charts: dict[str, ChartCache]
-    news_items: dict[str, list[NewsItem]]
-    financials: dict[str, TickerFinancials]
-    watchlist: list[str]
-    current_symbol: str
-    last_refresh : float
-    chart_range: Timeframe
+    store: Store
 
     service: MarketDataService
+
+    chart_range: Timeframe
 
     reference_lines: bool
     show_financials: bool
@@ -44,16 +38,18 @@ class DashboardScreen(Screen[None]):
 
         super().__init__()
 
+        # service /
         self.service = MarketDataService()
 
-        self.assets = {}
-        self.financials = {}
-        self.charts = {}
-        self.news_items = {}
-        self.last_refresh = time.time()
-        self.watchlist = ["AAPL", "MSFT", "NVDA"]
-        self.current_symbol = self.watchlist[0]
+        # store /
+        self.store = Store()
+
         self.chart_range = Timeframe.ONE_DAY
+
+        # timers /
+        self.last_refresh = time.time()
+
+        # booleans /
         self.reference_lines = True
         self.show_financials = False
 
@@ -124,40 +120,52 @@ class DashboardScreen(Screen[None]):
 
     """
 
-    def on_symbol_selected(self, event: SymbolSelected) -> None:
 
-        self.current_symbol = event.symbol
-
+    # -- UI Nodes --
+    def set_summary_node(self, asset: Asset) :
         summary = self.query_one("#summary", Summary)
+        summary.set_asset(asset)
+
+    def set_chart_node(self, chart_data: ChartData, range: Timeframe, show_lines: bool = True) :
         chart = self.query_one("#chart", Chart)
-        news = self.query_one("#news", News)
+        chart.set_chart_data(chart_data = chart_data, timeframe = range, reference_lines = show_lines)
+
+    def set_financials_node(self, symbol: str, financial_data: TickerFinancials) :
         financials = self.query_one("#financials", Financials)
+        financials.set_data(symbol, financial_data)
+
+    def set_news_node(self, news_items: list[NewsItem]) :
+        news = self.query_one("#news", News)
+        news.set_news(news_items)
+
+    def set_watchlist_node(self, assets: list[Asset]) :
+        watchlist = self.query_one("#watchlist", WatchList)
+        watchlist.set_assets(assets)
+
+    def set_tickers_node(self, assets: list[Asset]) :
+        tickers = self.query_one("#ticker", TickerBar)
+        tickers.set_assets(assets)
+
+    def on_symbol_selected(self, event: SymbolSelected) -> None:
+        self.store.set_current_symbol(event.symbol)
+        self.set_summary_node(self.store.get_current_asset())
+        self.set_chart_node(self.store.get_current_chart().intraday, self.chart_range, self.reference_lines)
+        self.set_financials_node(self.store.get_current_symbol(), self.store.get_current_financials())
+        self.set_news_node(self.store.get_current_news())
 
 
-        current_chart_data = self.charts[self.current_symbol].intraday
-
-        summary.set_asset(self.assets[self.current_symbol])
-        chart.set_chart_data(current_chart_data, self.chart_range, self.reference_lines)
-        financials.set_data(self.current_symbol, self.financials[self.current_symbol])
-        news.set_news(self.news_items[self.current_symbol])
-
-
-
+    # -- UI Updates --
     def refresh_intraday(self) -> None:
-        for symbol, cache in self.charts.items():
-            self.charts[symbol] = self.service.update_intraday_cache(
-                symbol,
-                cache
-            )
-            self.assets[symbol] = self.service.update_asset(symbol, self.assets[symbol])
+        for symbol, cache in self.store.charts.items():
+            self.store.set_asset(symbol, self.service.update_asset(symbol, self.store.get_asset(symbol)))
+            self.store.set_chart(symbol = symbol, chart_cache = cache)
         self.last_refresh = time.time()
 
-        self.query_one("#summary", Summary).set_asset(self.assets[self.current_symbol])
-        self.query_one("#ticker", TickerBar).set_assets(list(self.assets.values()))
-        self.query_one("#watchlist", WatchList).set_assets(list(self.assets.values()))
-
-        cache = self.charts[self.current_symbol]
-        self.query_one("#chart", Chart).set_chart_data(cache.get_chart_view(self.chart_range),self.chart_range, self.reference_lines)
+        self.set_summary_node(self.store.get_current_asset())
+        self.set_watchlist_node(self.store.get_assets())
+        self.set_tickers_node(self.store.get_assets())
+        self.store.set_chart(self.store.get_current_symbol(), self.store.get_current_chart())
+        self.set_chart_node(self.store.get_current_chart().get_chart_view(self.chart_range), self.chart_range, self.reference_lines)
 
     def update_chart_timer(self) -> None:
         age = int(time.time() - self.last_refresh)
@@ -168,22 +176,21 @@ class DashboardScreen(Screen[None]):
     def load_symbol(self, symbol: str) :
 
         # load quick info
-        self.assets[symbol] = self.service.get_asset(symbol)
+        self.store.set_asset(symbol, self.service.get_asset(symbol))
 
         # load chart points
-        self.charts[symbol] = ChartCache(
+        self.store.set_chart(symbol, ChartCache(
             intraday = self.service.get_chart(symbol, TimeRange.INTRADAY),
             hourly = self.service.get_chart(symbol, TimeRange.HOURLY),
             daily = self.service.get_chart(symbol, TimeRange.DAILY),
             longterm = self.service.get_chart(symbol, TimeRange.LONGTERM)
-        )
+        ))
 
         # load news
-        self.news_items[symbol] = self.service.get_news(symbol)
+        self.store.set_news(symbol, self.service.get_news(symbol))
 
         # load financial statements
-        self.financials[symbol] = self.service.get_financials(symbol)
-        
+        self.store.set_financials(symbol, self.service.get_financials(symbol))
 
     def on_mount(self) -> None:
 
@@ -197,33 +204,17 @@ class DashboardScreen(Screen[None]):
         self.reference_lines = True
 
         # seed stuffs
-        self.current_symbol = self.watchlist[0]
+        self.store.set_current_symbol(self.store.get_watchlist()[0])
         self.chart_range = Timeframe.ONE_DAY
-        for symbol in self.watchlist:
+        for symbol in self.store.get_watchlist():
             self.load_symbol(symbol)
 
-        # current stuffs
-        current_asset = self.assets[self.current_symbol]
-
-        cache = self.charts[self.current_symbol]
-        current_chart = cache.get_chart_view(self.chart_range)
-        current_news = self.news_items[self.current_symbol]
-
-        # textual stuffs
-        summary = self.query_one("#summary", Summary)
-        news = self.query_one("#news", News)
-        chart = self.query_one("#chart", Chart)
-        financials = self.query_one("#financials", Financials)
-        watchlist = self.query_one("#watchlist", WatchList)
-        ticker_bar = self.query_one("#ticker", TickerBar)
-
-        # setterz
-        summary.set_asset(current_asset)
-        ticker_bar.set_assets(list(self.assets.values()))
-        watchlist.set_assets(list(self.assets.values()))
-        chart.set_chart_data(current_chart, self.chart_range, self.reference_lines)
-        financials.set_data(self.current_symbol, self.financials[self.current_symbol])
-        news.set_news(current_news)
+        self.set_summary_node(self.store.get_current_asset())
+        self.set_tickers_node(self.store.get_assets())
+        self.set_watchlist_node(self.store.get_assets())
+        self.set_chart_node(self.store.get_current_chart().intraday, self.chart_range, self.reference_lines)
+        self.set_financials_node(self.store.get_current_symbol(), self.store.get_current_financials())
+        self.set_news_node(self.store.get_current_news())
 
     def action_add_ticker(self) -> None:
         self.app.push_screen(
@@ -231,15 +222,14 @@ class DashboardScreen(Screen[None]):
             self.on_ticker_added
         )
 
-
     def on_ticker_added(self, symbol: str | None) -> None:
-        if symbol is None or symbol in self.watchlist:
+        if symbol is None or symbol in self.store.get_watchlist():
             return
 
         self.load_symbol(symbol)
+        self.set_tickers_node(self.store.get_assets())
+        self.set_watchlist_node(self.store.get_assets())
 
-        self.query_one("#ticker", TickerBar).set_assets(list(self.assets.values()))
-        self.query_one("#watchlist", WatchList).set_assets(list(self.assets.values()))
 
     def action_cycle_timeframe(self) -> None:
         timeframes = list(Timeframe)
@@ -249,21 +239,16 @@ class DashboardScreen(Screen[None]):
 
         self.chart_range = timeframes[next_index]
 
-        chart = self.query_one("#chart", Chart)
-        cache = self.charts[self.current_symbol]
-        chart.set_chart_data(cache.get_chart_view(self.chart_range), self.chart_range, self.reference_lines)
+        self.set_chart_node(self.store.get_current_chart().get_chart_view(self.chart_range), self.chart_range, self.reference_lines)
 
     def action_toggle_reference_lines(self) -> None:
         self.reference_lines = not self.reference_lines
-        chart = self.query_one("#chart", Chart)
-        cache = self.charts[self.current_symbol]
-        chart.set_chart_data(cache.get_chart_view(self.chart_range), self.chart_range, self.reference_lines)
+        self.set_chart_node(self.store.get_current_chart().get_chart_view(self.chart_range), self.chart_range, self.reference_lines)
 
     def action_toggle_view(self) -> None:
         self.show_financials = not self.show_financials
         chart = self.query_one("#chart", Chart)
         vscroll = self.query_one("#vscroll", VerticalScroll)
-
         chart.display = not self.show_financials
         vscroll.display = self.show_financials
 

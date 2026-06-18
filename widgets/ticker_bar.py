@@ -1,3 +1,5 @@
+# ∴ Jokerhut / widgets/ticker_bar.py
+
 from textual.widgets import Static
 from models.asset import Asset
 from rich.columns import Columns

@@ -1,3 +1,4 @@
+# ∴ Jokerhut / util/formatters.py
 
 def format_number(value: float | int | None) -> str:
     if value is None:

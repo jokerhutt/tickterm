@@ -1,3 +1,6 @@
+# ∴ Jokerhut / widgets/news.py
+
+
 
 
 from rich.panel import Panel

@@ -1,3 +1,6 @@
+# ∴ Jokerhut / widgets/watchlist.py
+
+
 from rich.console import RenderableType
 from rich.text import Text
 from textual.widgets import DataTable

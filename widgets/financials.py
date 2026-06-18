@@ -1,3 +1,6 @@
+# ∴ Jokerhut / widgets/financials.py
+
+
 from os import wait
 from rich.console import Group
 from rich.panel import Panel

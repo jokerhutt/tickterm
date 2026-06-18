@@ -1,3 +1,6 @@
+# ∴ Jokerhut / mocks/mock_tickers.py
+
+
 from datetime import datetime
 
 from models.asset import Asset

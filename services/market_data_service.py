@@ -1,3 +1,6 @@
+# ∴ Jokerhut / services/market_data_service.py
+
+
 from typing import Any
 from pandas import Timestamp
 from yfinance.base import FastInfo
@@ -7,11 +10,13 @@ from models.financials import BalanceSheet, CashFlowStatement, IncomeStatement, 
 from models.news_item import NewsItem
 import math
 import yfinance as yf
+import util.calculations as calculations
 
 class MarketDataService:
+    
     def get_asset(self, symbol: str) -> Asset :
-        ticker = yf.Ticker(symbol)
 
+        ticker = yf.Ticker(symbol)
         info : FastInfo = ticker.fast_info
 
         price = float(info["lastPrice"])
@@ -19,7 +24,7 @@ class MarketDataService:
         volume = int(info["lastVolume"])
         market_cap = int(info["marketCap"])
 
-        change_pct = ((price - previous_close) / previous_close) * 100
+        change_pct = calculations.calc_change_pct(price, previous_close)
 
         return Asset(
             symbol = symbol,
@@ -130,10 +135,7 @@ class MarketDataService:
         previous_close = float(info["previousClose"])
 
         asset.price = price
-        asset.change_pct = (
-            (price - previous_close) / previous_close
-        ) * 100
-
+        asset.change_pct = calculations.calc_change_pct(price, previous_close)
         asset.volume = int(info["lastVolume"])
         asset.market_cap = int(info["marketCap"])
 

@@ -1,3 +1,6 @@
+# ∴ Jokerhut / messages/symbol_selected.py
+
+
 
 
 from textual.message import Message
