@@ -120,11 +120,13 @@ class Financials(Static):
         table.add_row(*header)
 
         for label, values in rows:
+
             row = [Text(label, style=ROSE_PINE["text"])]
 
             for value in values:
+                color = ROSE_PINE["positive"] if value and float(value) > 0 else ROSE_PINE["negative"]
                 row.append(
-                    Text(format_number(value), style=ROSE_PINE["text"])
+                    Text(format_number(value), style=color)
                 )
 
             table.add_row(*row)
