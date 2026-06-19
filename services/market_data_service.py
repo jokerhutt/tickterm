@@ -24,11 +24,18 @@ class MarketDataService:
         volume = int(info["lastVolume"])
         market_cap = int(info["marketCap"])
 
+        currency = info["currency"]
+        timezone = info["timezone"]
+
+
+
         change_pct = calculations.calc_change_pct(price, previous_close)
 
         return Asset(
             symbol = symbol,
             name = symbol,
+            currency = currency,
+            timezone = timezone,
             price = price, 
             change_pct = change_pct,
             volume = volume,
@@ -53,6 +60,8 @@ class MarketDataService:
         income_statement = ticker.income_stmt
         balance_sheet = ticker.balance_sheet
         cashflow_statement = ticker.cashflow
+
+        financial_currency : str = str(info.get("financialCurrency"))
 
         periods = []
 
@@ -88,6 +97,9 @@ class MarketDataService:
 
         # what a fat chunk
         return TickerFinancials(
+            # currency
+            financial_currency = financial_currency,
+
             # valuation
             market_cap=calculations.finite(info.get("marketCap")),
             pe_ratio=calculations.finite(info.get("trailingPE")),

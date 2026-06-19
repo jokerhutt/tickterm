@@ -30,13 +30,13 @@ class Financials(Static):
     def set_data(self, symbol: str, financials: TickerFinancials) -> None:
 
         valuation = [
-            ("Market Cap", format_number(financials.market_cap)),
+            ("Market Cap", format_number(financials.market_cap, financials.financial_currency)),
             ("Trailing P/E", format_ratio(financials.pe_ratio)),
             ("Forward P/E", format_ratio(financials.forward_pe)),
             ("PEG", format_ratio(financials.peg_ratio)),
             ("Price/Book", format_ratio(financials.price_to_book)),
             ("Price/Sales", format_ratio(financials.price_to_sales)),
-            ("EPS (ttm)", format_money(financials.eps)),
+            ("EPS (ttm)", format_money(financials.eps, financials.financial_currency)),
             ("Beta", format_ratio(financials.beta)),
         ]
         profitability = [
@@ -46,20 +46,20 @@ class Financials(Static):
             ("ROE", format_percent(financials.roe)),
         ]
         growth = [
-            ("Revenue (ttm)", format_number(financials.total_revenue)),
+            ("Revenue (ttm)", format_number(financials.total_revenue, financials.financial_currency)),
             ("Rev. Growth", format_percent(financials.revenue_growth)),
             ("Earnings Growth", format_percent(financials.earnings_growth)),
-            ("Free Cashflow", format_number(financials.free_cash_flow)),
+            ("Free Cashflow", format_number(financials.free_cash_flow, financials.financial_currency)),
         ]
         health = [
-            ("Total Cash", format_number(financials.total_cash)),
-            ("Total Debt", format_number(financials.total_debt)),
+            ("Total Cash", format_number(financials.total_cash, financials.financial_currency)),
+            ("Total Debt", format_number(financials.total_debt, financials.financial_currency)),
             ("Debt/Equity", format_ratio(financials.debt_to_equity)),
             ("Current Ratio", format_ratio(financials.current_ratio)),
         ]
         market = [
-            ("52w High", format_money(financials.week_52_high)),
-            ("52w Low", format_money(financials.week_52_low)),
+            ("52w High", format_money(financials.week_52_high, financials.financial_currency)),
+            ("52w Low", format_money(financials.week_52_low, financials.financial_currency)),
             ("Dividend Yield", format_percentage_points(financials.dividend_yield)),
         ]
 
@@ -87,7 +87,8 @@ class Financials(Static):
                     ("Gross Profit", financials.income.gross_profit),
                     ("Operating Income", financials.income.operating_income),
                     ("Net Income", financials.income.net_income),
-                ]
+                ],
+                financials.financial_currency
             ),
 
             Text(""),
@@ -101,7 +102,8 @@ class Financials(Static):
                     ("Liabilities", financials.balance.total_liabilities),
                     ("Debt", financials.balance.total_debt),
                     ("Equity", financials.balance.shareholder_equity),
-                ]
+                ],
+                financials.financial_currency
             ),
 
             Text(""),
@@ -113,7 +115,8 @@ class Financials(Static):
                     ("Operating CF", financials.cashflow.operating_cash_flow),
                     ("CapEx", financials.cashflow.capital_expenditure),
                     ("Free CF", financials.cashflow.free_cash_flow),
-                ]
+                ],
+                financials.financial_currency
             )
         )
 
@@ -130,7 +133,8 @@ class Financials(Static):
         self,
         title: str,
         periods: list[str],
-        rows: list[tuple[str, list[float | None]]]
+        rows: list[tuple[str, list[float | None]]],
+        currency: str
     ) -> Table:
 
         table = Table.grid(padding=(0, 12))
@@ -158,7 +162,7 @@ class Financials(Static):
             for value in values:
                 color = ROSE_PINE["positive"] if value and float(value) > 0 else ROSE_PINE["negative"]
                 row.append(
-                    Text(format_number(value), style=color)
+                    Text(format_number(value, currency), style=color)
                 )
 
             table.add_row(*row)

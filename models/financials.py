@@ -35,6 +35,9 @@ class CashFlowStatement:
 
 @dataclass
 class TickerFinancials:
+
+    financial_currency: str
+
     market_cap: float | None
 
     pe_ratio: float | None

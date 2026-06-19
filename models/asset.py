@@ -8,6 +8,9 @@ class Asset:
     symbol: str
     name: str
 
+    currency: str
+    timezone: str
+
     price: float
     change_pct: float
 
