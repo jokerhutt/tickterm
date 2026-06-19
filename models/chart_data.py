@@ -4,7 +4,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-
+from textual import log
 from dateutil.relativedelta import relativedelta
 
 class Timeframe(Enum):
@@ -62,11 +62,17 @@ class ChartData:
 
     # e.g. for past 1 hour u would pass in 60
     def last(self, cutoff: datetime) -> "ChartData":
+
+        log(f"cutoff: {cutoff}")
+
         filtered_points : list[ChartPoint] = []
 
         for point in self.points :
             if point.timestamp >= cutoff:
                 filtered_points.append(point)
+
+        log(f"original points: {len(self.points)}")
+        log(f"filtered points: {len(filtered_points)}")
 
         return ChartData(
             symbol = self.symbol,
@@ -109,11 +115,15 @@ class ChartCache:
 
         match timeframe:
             case Timeframe.ONE_HOUR:
+                if not self.intraday or not self.intraday.points:
+                    return None
+
+                latest = self.intraday.points[-1].timestamp
+
                 return self.filter_chart(
                     self.intraday,
-                    datetime.now(self.intraday.points[-1].timestamp.tzinfo) - timedelta(hours=1)
-                ) if self.intraday else None
-
+                    latest - timedelta(hours=1)
+                )
             case Timeframe.ONE_DAY:
                 return self.intraday
 
