@@ -1,5 +1,9 @@
 # ∴ Jokerhut / util/formatters.py
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+
 def format_number(value: float | int | None, currency: str) -> str:
     if value is None:
         return "N/A"
@@ -41,4 +45,13 @@ def format_percent(value: float | None) -> str:
     if value is None:
         return "N/A"
     return f"{value * 100:.2f}%"
+
+
+def format_timezone(timezone: str) -> str:
+    city = timezone.split("/")[-1].replace("_", " ")
+    abbreviation = datetime.now(
+        ZoneInfo(timezone)
+    ).tzname()
+    # EST - New York
+    return f"{abbreviation} - {city}"
 

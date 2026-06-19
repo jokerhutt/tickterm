@@ -127,9 +127,9 @@ class DashboardScreen(Screen[None]):
         summary = self.query_one("#summary", Summary)
         summary.set_asset(asset)
 
-    def set_chart_node(self, chart_data: ChartData, range: Timeframe, show_lines: bool = True) :
+    def set_chart_node(self, chart_data: ChartData, range: Timeframe, timezone: str, show_lines: bool = True) :
         chart = self.query_one("#chart", Chart)
-        chart.set_chart_data(chart_data = chart_data, timeframe = range, reference_lines = show_lines)
+        chart.set_chart_data(chart_data = chart_data, timeframe = range, timezone = timezone, reference_lines = show_lines)
 
     def set_financials_node(self, symbol: str, financial_data: TickerFinancials) :
         financials = self.query_one("#financials", Financials)
@@ -157,12 +157,17 @@ class DashboardScreen(Screen[None]):
         )
 
     def refresh_current(self) -> None:
-        self.set_summary_node(self.store.get_current_asset())
+
+        current_asset = self.store.get_current_asset()
+        current_chart = self.store.get_current_chart().get_chart_view(self.chart_range)
+
+        self.set_summary_node(current_asset)
 
         self.set_chart_node(
-            self.store.get_current_chart().get_chart_view(self.chart_range),
-            self.chart_range,
-            self.reference_lines,
+            chart_data = current_chart,
+            range = self.chart_range,
+            timezone = current_asset.timezone,
+            show_lines = self.reference_lines,
         )
 
         self.set_financials_node(
@@ -284,7 +289,14 @@ class DashboardScreen(Screen[None]):
 
         self.chart_range = timeframes[next_index]
 
-        self.set_chart_node(self.store.get_current_chart().get_chart_view(self.chart_range), self.chart_range, self.reference_lines)
+        current_asset = self.store.get_current_asset()
+
+        self.set_chart_node(
+                chart_data = self.store.get_current_chart().get_chart_view(self.chart_range),
+                range = self.chart_range,
+                timezone = current_asset.timezone,
+                show_lines = self.reference_lines
+            )
 
     def action_toggle_reference_lines(self) -> None:
         self.reference_lines = not self.reference_lines

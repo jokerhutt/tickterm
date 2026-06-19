@@ -9,6 +9,7 @@ from models.chart_data import ChartCache, ChartData, ChartPoint, TimeRange, Time
 from models.financials import BalanceSheet, CashFlowStatement, IncomeStatement, TickerFinancials
 from models.news_item import NewsItem
 import math
+from textual import log
 import yfinance as yf
 import util.calculations as calculations
 
@@ -26,8 +27,8 @@ class MarketDataService:
 
         currency = info["currency"]
         timezone = info["timezone"]
-
-
+        
+        log(f"tz: {timezone}")
 
         change_pct = calculations.calc_change_pct(price, previous_close)
 

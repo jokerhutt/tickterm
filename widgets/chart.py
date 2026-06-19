@@ -7,6 +7,7 @@ from textual import log
 from models.chart_data import ChartData, TimeRange, Timeframe
 from themes import ROSE_PINE
 from textual_plotext import PlotextPlot
+from util.formatters import format_timezone
 
 
 class Chart(PlotextPlot):
@@ -23,7 +24,7 @@ class Chart(PlotextPlot):
     }}
     """
 
-    def set_chart_data(self, chart_data: ChartData, timeframe: Timeframe, reference_lines: bool = True):
+    def set_chart_data(self, chart_data: ChartData, timeframe: Timeframe, timezone: str, reference_lines: bool = True):
         self.plt.clear_data()
 
         log(chart_data)
@@ -59,7 +60,8 @@ class Chart(PlotextPlot):
         self.plt.xticks(positions, tick_labels)
 
         # title
-        self.plt.title(f"{chart_data.symbol} • {chart_data.timerange} • {timeframe}")
+        formatted_tz = format_timezone(timezone)
+        self.plt.title(f"{chart_data.symbol} • {timeframe.value} • {formatted_tz}")
 
         # cool stats
         day_open = prices[0]
