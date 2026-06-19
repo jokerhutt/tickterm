@@ -197,22 +197,31 @@ class DashboardScreen(Screen[None]):
 
     def load_symbol(self, symbol: str) :
 
-        # load quick info
-        self.store.set_asset(symbol, self.service.get_asset(symbol))
+        try :
 
-        # load chart points
-        self.store.set_chart(symbol, ChartCache(
-            intraday = self.service.get_chart(symbol, TimeRange.INTRADAY),
-            hourly = self.service.get_chart(symbol, TimeRange.HOURLY),
-            daily = self.service.get_chart(symbol, TimeRange.DAILY),
-            longterm = self.service.get_chart(symbol, TimeRange.LONGTERM)
-        ))
+            asset = self.service.get_asset(symbol)
 
-        # load news
-        self.store.set_news(symbol, self.service.get_news(symbol))
+            # load quick info
+            self.store.set_asset(symbol, asset)
 
-        # load financial statements
-        self.store.set_financials(symbol, self.service.get_financials(symbol))
+            # load chart points
+            self.store.set_chart(symbol, ChartCache(
+                intraday = self.service.get_chart(symbol, TimeRange.INTRADAY),
+                hourly = self.service.get_chart(symbol, TimeRange.HOURLY),
+                daily = self.service.get_chart(symbol, TimeRange.DAILY),
+                longterm = self.service.get_chart(symbol, TimeRange.LONGTERM)
+            ))
+
+            # load news
+            self.store.set_news(symbol, self.service.get_news(symbol))
+
+            # load financial statements
+            self.store.set_financials(symbol, self.service.get_financials(symbol))
+            return True
+
+        except Exception as e:
+            self.notify(f"Could not load `{symbol}`")
+            return False
 
     def on_mount(self) -> None:
 
@@ -260,8 +269,10 @@ class DashboardScreen(Screen[None]):
         if symbol is None or symbol in self.store.get_watchlist():
             return
 
+        if not self.load_symbol(symbol) :
+            return
+
         self.store.add_to_watchlist(symbol)
-        self.load_symbol(symbol)
         self.refresh_sidebar()
 
 
