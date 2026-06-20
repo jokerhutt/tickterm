@@ -1,6 +1,7 @@
 # ∴ Jokerhut / screens/dashboard.py
 
 
+from textual.widgets import Footer
 from store import Store
 import time
 from textual.binding import Binding
@@ -300,7 +301,12 @@ class DashboardScreen(Screen[None]):
 
     def action_toggle_reference_lines(self) -> None:
         self.reference_lines = not self.reference_lines
-        self.set_chart_node(self.store.get_current_chart().get_chart_view(self.chart_range), self.chart_range, self.reference_lines)
+        self.set_chart_node(
+                chart_data = self.store.get_current_chart().get_chart_view(self.chart_range),
+                range = self.chart_range,
+                timezone = current_asset.timezone,
+                show_lines = self.reference_lines
+            )
 
     def action_toggle_view(self) -> None:
         self.show_financials = not self.show_financials
@@ -326,6 +332,8 @@ class DashboardScreen(Screen[None]):
                     with VerticalScroll(id="vscroll"):
                         yield Financials(id = "financials")
                 yield News(id="news")
+
+        yield Footer()
         
 
 
