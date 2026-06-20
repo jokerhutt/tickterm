@@ -11,5 +11,7 @@ trading day. Built with Textual using data from yfinance.
 
 ## Running the project
 ```bash
+git clone https://github.com/jokerhutt/tickterm.git
+cd tickterm
 uv sync
 uv run python main.py
