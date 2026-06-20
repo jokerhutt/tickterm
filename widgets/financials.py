@@ -28,6 +28,17 @@ class Financials(Static):
     """
     def set_data(self, symbol: str, financials: TickerFinancials) -> None:
 
+
+        # compute union since balance sheet sometimes has less years than income stmt /
+        all_periods = sorted(
+            set(
+                financials.income.periods
+                + financials.balance.periods
+                + financials.cashflow.periods
+            ),
+            reverse = True
+        )
+
         valuation = [
             ("Market Cap", format_number(financials.market_cap, financials.financial_currency)),
             ("Trailing P/E", format_ratio(financials.pe_ratio)),
@@ -80,6 +91,7 @@ class Financials(Static):
 
             self.statement_table(
                 "Income Statement",
+                all_periods,
                 financials.income.periods,
                 [
                     ("Revenue", financials.income.total_revenue),
@@ -94,6 +106,7 @@ class Financials(Static):
 
             self.statement_table(
                 "Balance Sheet",
+                all_periods,
                 financials.balance.periods,
                 [
                     ("Assets", financials.balance.total_assets),
@@ -110,6 +123,7 @@ class Financials(Static):
             self.statement_table(
                 "Cash Flow",
                 financials.cashflow.periods,
+                all_periods,
                 [
                     ("Operating CF", financials.cashflow.operating_cash_flow),
                     ("CapEx", financials.cashflow.capital_expenditure),
@@ -131,23 +145,24 @@ class Financials(Static):
     def statement_table(
         self,
         title: str,
+        display_periods: list[str],
         periods: list[str],
         rows: list[tuple[str, list[float | None]]],
         currency: str
     ) -> Table:
 
-        table = Table.grid(padding=(0, 12))
+        table = Table.grid(expand = True)
 
         table.add_column(width=self.LABEL_WIDTH)
 
-        for _ in periods:
-            table.add_column(justify="right")
+        for _ in display_periods:
+            table.add_column(justify="right", ratio = 1, no_wrap = True)
 
         header = [
             Text(title, style=f"bold {ROSE_PINE['gold']}")
         ]
 
-        for period in periods:
+        for period in display_periods:
             header.append(
                 Text(period, style=ROSE_PINE["muted"])
             )
@@ -158,8 +173,11 @@ class Financials(Static):
 
             row = [Text(label, style=ROSE_PINE["text"])]
 
-            for value in values:
-                color = ROSE_PINE["positive"] if value and float(value) > 0 else ROSE_PINE["negative"]
+            value_map = dict(zip(periods, values))
+
+            for period in display_periods :
+                value = value_map.get(period)
+                color = ROSE_PINE["positive"] if value is not None and float(value) > 0 else ROSE_PINE["negative"]
                 row.append(
                     Text(format_number(value, currency), style=color)
                 )
