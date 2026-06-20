@@ -8,6 +8,7 @@ from rich.text import Text
 from models.asset import Asset
 from themes import ROSE_PINE
 
+
 class Summary(Static):
 
     def set_asset(self, asset: Asset) -> None:

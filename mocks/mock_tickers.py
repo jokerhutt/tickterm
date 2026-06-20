@@ -2,7 +2,6 @@
 
 
 from datetime import datetime
-
 from models.asset import Asset
 from models.chart_data import ChartData, ChartPoint, Timeframe
 from models.news_item import NewsItem

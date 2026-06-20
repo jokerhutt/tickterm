@@ -1,17 +1,17 @@
 # ∴ Jokerhut / services/market_data_service.py
 
 
-from typing import Any, cast
+from typing import cast
 from pandas import Timestamp
+from textual import log
 from yfinance.base import FastInfo
+import yfinance as yf
 from models.asset import Asset
 from models.chart_data import ChartCache, ChartData, ChartPoint, TimeRange, Timeframe
-from models.financials import BalanceSheet, CashFlowStatement, IncomeStatement, TickerFinancials
+from models.financials import TickerFinancials
 from models.news_item import NewsItem
-import math
-from textual import log
-import yfinance as yf
 import util.calculations as calculations
+
 
 class MarketDataService:
     

@@ -1,8 +1,10 @@
 # ∴ Jokerhut / models/financials.py
 
+
 import pandas as pd
 from dataclasses import dataclass
 from util import calculations
+
 
 def _periods(frame: pd.DataFrame) -> list[str]:
     if frame.empty:

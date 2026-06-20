@@ -1,12 +1,9 @@
 # ∴ Jokerhut / widgets/news.py
 
 
-
-
 from rich.panel import Panel
 from rich.table import Table
 from textual.widgets import Static
-
 from models.news_item import NewsItem
 from themes import ROSE_PINE
 

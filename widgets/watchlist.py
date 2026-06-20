@@ -6,9 +6,7 @@ from rich.text import Text
 from textual.widgets import DataTable
 from messages.symbol_selected import SymbolSelected
 from models.asset import Asset
-from models.chart_data import ChartCache
 from themes import ROSE_PINE
-
 
 
 class WatchList(DataTable[RenderableType]) :

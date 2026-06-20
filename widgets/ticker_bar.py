@@ -1,5 +1,6 @@
 # ∴ Jokerhut / widgets/ticker_bar.py
 
+
 import math
 from textual.widgets import Static
 from models.asset import Asset
@@ -10,6 +11,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 from themes import ROSE_PINE
+
 
 class TickerBar(Static) :
 

@@ -1,10 +1,8 @@
 # ∴ Jokerhut / widgets/chart.py
 
 
-from rich.panel import Panel
-from textual.widgets import Static
 from textual import log
-from models.chart_data import ChartData, TimeRange, Timeframe
+from models.chart_data import ChartData, Timeframe
 from themes import ROSE_PINE
 from textual_plotext import PlotextPlot
 from util.formatters import format_timezone

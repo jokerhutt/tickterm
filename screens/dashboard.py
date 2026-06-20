@@ -22,6 +22,7 @@ from widgets.summary import Summary
 from widgets.ticker_bar import TickerBar
 from widgets.watchlist import WatchList
 
+
 class DashboardScreen(Screen[None]):
 
     theme = ROSE_PINE

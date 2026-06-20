@@ -7,6 +7,7 @@ from enum import Enum
 from textual import log
 from dateutil.relativedelta import relativedelta
 
+
 class Timeframe(Enum):
     ONE_HOUR = "1h"
     ONE_DAY = "1d"
