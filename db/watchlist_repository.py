@@ -1,3 +1,5 @@
+# ∴ Jokerhut / db/watchlist_repository.py
+
 from db.database import get_connection
 
 class WatchlistRepository:

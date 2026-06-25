@@ -1,3 +1,5 @@
+# ∴ Jokerhut / db/database.py
+
 import sqlite3
 
 DB_PATH = "tickterm.db"
