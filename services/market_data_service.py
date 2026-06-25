@@ -20,10 +20,24 @@ class MarketDataService:
         ticker = yf.Ticker(symbol)
         info : FastInfo = ticker.fast_info
 
+        quote_type = str(info["quoteType"])
+
         price = float(info["lastPrice"])
         previous_close = float(info["previousClose"])
-        volume = int(info["lastVolume"])
-        market_cap = int(info["marketCap"])
+
+        try:
+            volume = int(info["lastVolume"])
+            if volume == 0:
+                volume = None
+        except (KeyError, TypeError):
+            volume = None
+
+        try:
+            market_cap = int(info["marketCap"])
+            if market_cap == 0:
+                market_cap = None
+        except (KeyError, TypeError):
+            market_cap = None
 
         currency = info["currency"]
         timezone = info["timezone"]
@@ -35,6 +49,7 @@ class MarketDataService:
         return Asset(
             symbol = symbol,
             name = symbol,
+            quote_type=quote_type, 
             currency = currency,
             timezone = timezone,
             price = price, 
@@ -90,13 +105,29 @@ class MarketDataService:
         ticker = yf.Ticker(symbol)
         info: FastInfo = ticker.fast_info
 
+        quote_type = str(info["quoteType"])
+
         price = float(info["lastPrice"])
         previous_close = float(info["previousClose"])
 
+        try:
+            volume = int(info["lastVolume"])
+            if volume == 0:
+                volume = None
+        except (KeyError, TypeError):
+            volume = None
+
+        try:
+            market_cap = int(info["marketCap"])
+            if market_cap == 0:
+                market_cap = None
+        except (KeyError, TypeError):
+            market_cap = None
+
         asset.price = price
         asset.change_pct = calculations.calc_change_pct(price, previous_close)
-        asset.volume = int(info["lastVolume"])
-        asset.market_cap = int(info["marketCap"])
+        asset.volume = volume
+        asset.market_cap = market_cap
 
         return asset
 

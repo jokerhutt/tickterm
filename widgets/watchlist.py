@@ -18,7 +18,7 @@ class WatchList(DataTable[RenderableType]) :
 
         self.add_columns(
             "Symbol",
-            "Name",
+            "Type",
             "Last",
             "%"
         )
@@ -33,7 +33,7 @@ class WatchList(DataTable[RenderableType]) :
 
             self.add_row(
                 asset.symbol,
-                asset.name,
+                asset.quote_type,
                 f"${asset.price:.2f}",
                 Text(f"{asset.change_pct:+.2f}%", style = change_color)
             )

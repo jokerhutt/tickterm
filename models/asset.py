@@ -2,12 +2,13 @@
 
 
 from dataclasses import dataclass
-
+from enum import Enum
 
 @dataclass
 class Asset:
     symbol: str
     name: str
+    quote_type: str
 
     currency: str
     timezone: str
@@ -15,6 +16,7 @@ class Asset:
     price: float
     change_pct: float
 
-    volume: int
-    market_cap: int 
+    # Optional since indexes dont have mkt cap and vol
+    volume: int | None
+    market_cap: int  | None
 
