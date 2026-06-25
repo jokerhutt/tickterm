@@ -25,11 +25,14 @@ class Summary(Static):
         table.add_column(justify="center")
         table.add_column(justify="center")
 
+        volume = f"{asset.volume:,}" if asset.volume is not None else "N/A"
+        market_cap = f"{asset.market_cap:,}" if asset.market_cap is not None else "N/A"
+
         table.add_row(
             Text(f"Last\n${asset.price:.2f}", style=ROSE_PINE["text"]),
             Text(f"Change\n{asset.change_pct:+.2f}%", style=change_style),
-            Text(f"Volume\n{asset.volume:,}", style=ROSE_PINE["text"]),
-            Text(f"Mkt Cap\n{asset.market_cap:,}", style=ROSE_PINE["text"]),
+            Text(f"Volume\n{volume}", style=ROSE_PINE["text"]),
+            Text(f"Mkt Cap\n{market_cap}", style=ROSE_PINE["text"]),
         )
 
         self.update(
