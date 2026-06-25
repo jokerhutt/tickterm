@@ -100,6 +100,11 @@ class DashboardScreen(Screen[None]):
         height: 1fr;
     }}
 
+    WatchList > .datatable--cursor {{
+        background: {ROSE_PINE["accent"]};
+        color: black;
+    }}
+
     #summary {{
         height: 4;
     }}
