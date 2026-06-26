@@ -7,7 +7,7 @@ from textual.widgets import Footer, Static
 from store import Store
 import time
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical, VerticalScroll
+from textual.containers import Container, Horizontal, HorizontalScroll, Vertical, VerticalScroll
 from textual.screen import Screen
 from messages.symbol_selected import SymbolSelected
 from models.asset import Asset
@@ -74,7 +74,12 @@ class DashboardScreen(Screen[None]):
 
     #ticker {{
         background: {ROSE_PINE["surface"]};
-        height: 4;
+        height: 5;
+    }}
+
+    #ticker-scroll {{
+        height: 5;
+        overflow-x: auto;
     }}
 
     #body {{
@@ -386,7 +391,8 @@ class DashboardScreen(Screen[None]):
         vscroll.display = self.show_financials
 
     def compose(self):
-        yield TickerBar(id="ticker")
+        with HorizontalScroll(id = "ticker-scroll") :
+            yield TickerBar(id="ticker")
 
         with Horizontal(id = "body"):
 

@@ -2,6 +2,7 @@
 
 
 import math
+from rich.table import Table
 from textual.widgets import Static
 from models.asset import Asset
 from models.chart_data import ChartCache
@@ -12,10 +13,11 @@ from rich.text import Text
 
 from themes import ROSE_PINE
 
+PANEL_WIDTH = 22
 
 class TickerBar(Static) :
 
-    def sparkline(self, values: list[float], width: int = 32) -> str :
+    def sparkline(self, values: list[float], width: int = 20) -> str :
         if not values:
             return " " * width
         if len(values) > width:
@@ -69,16 +71,20 @@ class TickerBar(Static) :
                 title=asset.symbol,
                 border_style=ROSE_PINE["accent"],
                 padding=(0, 1),
+                width = PANEL_WIDTH,
+                height = 4,
             )
 
             panels.append(panel)
 
-        self.update(
-            Group(
-                Columns(
-                    panels,
-                    expand=False,
-                    equal=False,
-                )
-            )
-        )
+
+        grid = Table.grid(padding = 1)
+        grid.expand = False
+
+        for _ in panels :
+            grid.add_column(width = PANEL_WIDTH)
+        grid.add_row(*panels)
+
+        self.styles.width = len(panels) * (PANEL_WIDTH + 2)
+
+        self.update(grid)
