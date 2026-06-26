@@ -22,6 +22,11 @@ class MarketDataService:
 
         quote_type = str(info["quoteType"])
 
+        if quote_type == "CRYPTOCURRENCY" :
+            quote_type = "CRYPTO"
+        if quote_type == "MUTUALFUND" :
+            quote_type = "MUTUAL"
+
         price = float(info["lastPrice"])
         previous_close = float(info["previousClose"])
 
@@ -84,7 +89,7 @@ class MarketDataService:
         if history.empty :
             raise ValueError("cache intraday no exist")
 
-        existing = cache.intraday.points
+        existing = cache.intraday.points or []
         known = {point.timestamp for point in existing}
 
         for dt, close in history["Close"].items():
@@ -104,8 +109,6 @@ class MarketDataService:
     def update_asset(self, symbol: str, asset: Asset) -> Asset:
         ticker = yf.Ticker(symbol)
         info: FastInfo = ticker.fast_info
-
-        quote_type = str(info["quoteType"])
 
         price = float(info["lastPrice"])
         previous_close = float(info["previousClose"])

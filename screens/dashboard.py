@@ -81,7 +81,7 @@ class DashboardScreen(Screen[None]):
 
     #sidebar {{
         background: {ROSE_PINE["surface"]};
-        width: 35;
+        width: 40;
     }}
 
     #content {{
