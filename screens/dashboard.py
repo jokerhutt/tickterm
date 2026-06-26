@@ -4,6 +4,7 @@
 import asyncio
 from textual import work
 from textual.widgets import Footer, Static
+from screens.loading_screen import LoadingScreen
 from store import Store
 import time
 from textual.binding import Binding
@@ -72,16 +73,7 @@ class DashboardScreen(Screen[None]):
         color: {ROSE_PINE["text"]};
     }}
 
-    #loading {{
-        layer: overlay;
-        width: 100%;
-        height: 100%;
-        display: none;
-        align: center middle;
-        background: {ROSE_PINE["surface"]};
-        content-align: center middle;
-        text-align: center;
-    }}
+    #loading {{}}
 
     #footer {{}}
 
@@ -429,11 +421,6 @@ class DashboardScreen(Screen[None]):
                 yield News(id="news")
 
         yield Footer(id = "footer")
-        yield Static(
-            "[bold]TickTerm[/bold]\n"
-            "[dim]by JokerHut[/dim]\n\n"
-            "Fetching Yahoo Finance data...",
-            id="loading",
-        )        
+        yield LoadingScreen(id = "loading")        
 
 
