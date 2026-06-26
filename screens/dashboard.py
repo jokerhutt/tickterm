@@ -1,6 +1,8 @@
 # ∴ Jokerhut / screens/dashboard.py
 
 
+import asyncio
+from textual import work
 from textual.widgets import Footer, Static
 from store import Store
 import time
@@ -221,12 +223,28 @@ class DashboardScreen(Screen[None]):
 
 
     # -- UI Updates --
-    def refresh_intraday(self) -> None:
+    @work(exclusive = True, group = "refresh")
+    async def refresh_intraday(self) -> None:
         for symbol, cache in self.store.charts.items():
-            self.store.set_asset(symbol, self.service.update_asset(symbol, self.store.get_asset(symbol)))
-            updated_cache = self.service.update_intraday_cache(symbol, cache)
-            self.store.set_chart(symbol = symbol, chart_cache = updated_cache)
+            asset = await asyncio.to_thread(self.service.update_asset, symbol, self.store.get_asset(symbol))
+            updated_cache = await asyncio.to_thread(self.service.update_intraday_cache, symbol, cache)
+            self.store.set_asset(symbol, asset)
+            self.store.set_chart(symbol, updated_cache)
+
         self.last_refresh = time.time()
+
+        self.refresh_sidebar()
+        self.refresh_current()
+
+    @work
+    async def load_initial_data(self):
+        for symbol in self.store.get_watchlist():
+            await asyncio.to_thread(self.load_symbol_quick, symbol)
+
+        await asyncio.to_thread(
+            self.load_symbol_details,
+            self.store.get_current_symbol()
+        )
 
         self.refresh_sidebar()
         self.refresh_current()
