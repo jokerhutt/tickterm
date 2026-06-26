@@ -72,6 +72,19 @@ class DashboardScreen(Screen[None]):
         color: {ROSE_PINE["text"]};
     }}
 
+    #loading {{
+        layer: overlay;
+        width: 100%;
+        height: 100%;
+        display: none;
+        align: center middle;
+        background: {ROSE_PINE["surface"]};
+        content-align: center middle;
+        text-align: center;
+    }}
+
+    #footer {{}}
+
     #ticker {{
         background: {ROSE_PINE["surface"]};
         height: 5;
@@ -253,6 +266,7 @@ class DashboardScreen(Screen[None]):
 
         self.refresh_sidebar()
         self.refresh_current()
+        self.set_loading(False)
 
     def update_chart_timer(self) -> None:
         age = int(time.time() - self.last_refresh)
@@ -312,12 +326,9 @@ class DashboardScreen(Screen[None]):
         # seed stuffs
         self.store.set_current_symbol(self.store.get_watchlist()[0])
         self.chart_range = Timeframe.ONE_DAY
-        for symbol in self.store.get_watchlist():
-            self.load_symbol_quick(symbol)
-        self.load_symbol_details(self.store.get_current_symbol())
 
-        self.refresh_sidebar()
-        self.refresh_current()
+        self.set_loading(True)
+        self.load_initial_data()
 
 
     def action_add_ticker(self) -> None:
@@ -390,6 +401,13 @@ class DashboardScreen(Screen[None]):
         chart.display = not self.show_financials
         vscroll.display = self.show_financials
 
+    def set_loading(self, loading: bool) -> None:
+        self.query_one("#loading", Static).display = loading
+        self.query_one("#chart", Chart).display = not loading
+        self.query_one("#footer", Footer).display = not loading
+        self.query_one("#no-data", Static).display = False
+        self.query_one("#vscroll", VerticalScroll).display = False
+
     def compose(self):
         with HorizontalScroll(id = "ticker-scroll") :
             yield TickerBar(id="ticker")
@@ -410,7 +428,12 @@ class DashboardScreen(Screen[None]):
                         yield Financials(id = "financials")
                 yield News(id="news")
 
-        yield Footer()
-        
+        yield Footer(id = "footer")
+        yield Static(
+            "[bold]TickTerm[/bold]\n"
+            "[dim]by JokerHut[/dim]\n\n"
+            "Fetching Yahoo Finance data...",
+            id="loading",
+        )        
 
 
