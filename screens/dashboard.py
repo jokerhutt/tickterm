@@ -1,7 +1,7 @@
 # ∴ Jokerhut / screens/dashboard.py
 
 
-from textual.widgets import Footer
+from textual.widgets import Footer, Static
 from store import Store
 import time
 from textual.binding import Binding
@@ -114,6 +114,14 @@ class DashboardScreen(Screen[None]):
         height: 1fr;
     }}
 
+    #no-data {{
+        display: none;
+        content-align: center middle;
+        text-align: center;
+        height: 1fr;
+        color: $text-muted;
+    }}
+
     #vscroll {{
         height: 1fr;
         display: none;
@@ -134,8 +142,27 @@ class DashboardScreen(Screen[None]):
         summary = self.query_one("#summary", Summary)
         summary.set_asset(asset)
 
-    def set_chart_node(self, chart_data: ChartData, range: Timeframe, timezone: str, show_lines: bool = True) :
+    def set_chart_node(self, chart_data: ChartData | None, range: Timeframe, timezone: str, show_lines: bool = True) :
         chart = self.query_one("#chart", Chart)
+        no_data = self.query_one("#no-data", Static)
+
+        if chart_data is None or not chart_data.points:
+            chart.display = False
+            no_data.display = True
+            no_data.update(
+                "\n".join([
+                    f"{self.store.get_current_symbol()} • {range.value}",
+                    "",
+                    "No data available for this timeframe.",
+                    "",
+                    "Try selecting a longer timeframe using g.",
+                ])
+            )           
+            return
+
+        chart.display = True
+        no_data.display = False
+
         chart.set_chart_data(chart_data = chart_data, timeframe = range, timezone = timezone, reference_lines = show_lines)
 
     def set_financials_node(self, symbol: str, financial_data: TickerFinancials) :
@@ -188,7 +215,10 @@ class DashboardScreen(Screen[None]):
 
     def on_symbol_selected(self, event: SymbolSelected) -> None:
         self.store.set_current_symbol(event.symbol)
+        if not self.store.has_news_items(event.symbol):
+            self.load_symbol_details(event.symbol)
         self.refresh_current()
+
 
     # -- UI Updates --
     def refresh_intraday(self) -> None:
@@ -207,32 +237,42 @@ class DashboardScreen(Screen[None]):
         chart = self.query_one("#chart", Chart)
         chart.update_refresh_timer(next_refresh)
 
-    def load_symbol(self, symbol: str) :
-
-        try :
-
+    def load_symbol_quick(self, symbol: str) -> bool:
+        try:
             asset = self.service.get_asset(symbol)
-
-            # load quick info
             self.store.set_asset(symbol, asset)
 
-            # load chart points
-            self.store.set_chart(symbol, ChartCache(
-                intraday = self.service.get_chart(symbol, TimeRange.INTRADAY),
-                hourly = self.service.get_chart(symbol, TimeRange.HOURLY),
-                daily = self.service.get_chart(symbol, TimeRange.DAILY),
-                longterm = self.service.get_chart(symbol, TimeRange.LONGTERM)
-            ))
+            self.store.set_chart(
+                symbol,
+                ChartCache(
+                    intraday=self.service.get_chart(symbol, TimeRange.INTRADAY),
+                    hourly=ChartData(symbol, TimeRange.HOURLY, []),
+                    daily=ChartData(symbol, TimeRange.DAILY, []),
+                    longterm=ChartData(symbol, TimeRange.LONGTERM, []),
+                ),
+            )
 
-            # load news
-            self.store.set_news(symbol, self.service.get_news(symbol))
-
-            # load financial statements
-            self.store.set_financials(symbol, self.service.get_financials(symbol))
             return True
 
-        except Exception as e:
+        except Exception:
             self.notify(f"Could not load `{symbol}`")
+            return False
+
+    def load_symbol_details(self, symbol: str) -> bool:
+        try:
+            cache = self.store.get_chart(symbol)
+
+            cache.hourly = self.service.get_chart(symbol, TimeRange.HOURLY)
+            cache.daily = self.service.get_chart(symbol, TimeRange.DAILY)
+            cache.longterm = self.service.get_chart(symbol, TimeRange.LONGTERM)
+
+            self.store.set_news(symbol, self.service.get_news(symbol))
+            self.store.set_financials(symbol, self.service.get_financials(symbol))
+
+            return True
+
+        except Exception:
+            self.notify(f"Could not load details for `{symbol}`")
             return False
 
     def on_mount(self) -> None:
@@ -250,7 +290,8 @@ class DashboardScreen(Screen[None]):
         self.store.set_current_symbol(self.store.get_watchlist()[0])
         self.chart_range = Timeframe.ONE_DAY
         for symbol in self.store.get_watchlist():
-            self.load_symbol(symbol)
+            self.load_symbol_quick(symbol)
+        self.load_symbol_details(self.store.get_current_symbol())
 
         self.refresh_sidebar()
         self.refresh_current()
@@ -281,7 +322,7 @@ class DashboardScreen(Screen[None]):
         if symbol is None or symbol in self.store.get_watchlist():
             return
 
-        if not self.load_symbol(symbol) :
+        if not self.load_symbol_quick(symbol) :
             return
 
         self.store.add_to_watchlist(symbol)
@@ -298,8 +339,13 @@ class DashboardScreen(Screen[None]):
 
         current_asset = self.store.get_current_asset()
 
+        chart = self.store.get_current_chart().get_chart_view(self.chart_range)
+        if chart is None:
+            self.load_symbol_details(self.store.get_current_symbol())
+            chart = self.store.get_current_chart().get_chart_view(self.chart_range)
+
         self.set_chart_node(
-                chart_data = self.store.get_current_chart().get_chart_view(self.chart_range),
+                chart_data = chart,
                 range = self.chart_range,
                 timezone = current_asset.timezone,
                 show_lines = self.reference_lines
@@ -335,6 +381,7 @@ class DashboardScreen(Screen[None]):
                 yield Summary(id="summary")
                 with Container(id = "content"):
                     yield Chart(id="chart")
+                    yield Static(id="no-data")
                     with VerticalScroll(id="vscroll"):
                         yield Financials(id = "financials")
                 yield News(id="news")

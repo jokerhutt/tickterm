@@ -60,6 +60,9 @@ class Store :
     def set_news(self, symbol: str, news_items: list[NewsItem]) :
         self.news_items[symbol] = news_items
 
+    def has_news_items(self, symbol: str) -> bool:
+        return symbol in self.news_items
+
     def get_current_news(self) -> list[NewsItem] :
         return self.news_items[self.current_symbol]
 

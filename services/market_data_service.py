@@ -87,7 +87,7 @@ class MarketDataService:
         history  = ticker.history(period = period, interval = interval)
 
         if history.empty :
-            raise ValueError("cache intraday no exist")
+            return cache
 
         existing = cache.intraday.points or []
         known = {point.timestamp for point in existing}
