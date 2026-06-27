@@ -322,12 +322,23 @@ class DashboardScreen(Screen[None]):
         self.set_loading(True)
         self.load_initial_data()
 
+    # Actions //
 
     def action_add_ticker(self) -> None:
         self.app.push_screen(
             AddTickerModal(),
             self.on_ticker_added
         )
+
+    def on_ticker_added(self, symbol: str | None) -> None:
+        if symbol is None or symbol in self.store.get_watchlist():
+            return
+
+        if not self.load_symbol_quick(symbol) :
+            return
+
+        self.store.add_to_watchlist(symbol)
+        self.refresh_sidebar()
 
     def action_remove_ticker(self) -> None:
         symbol = self.store.get_current_symbol()
@@ -342,18 +353,6 @@ class DashboardScreen(Screen[None]):
 
         self.refresh_sidebar()
         self.refresh_current()
-
-
-    def on_ticker_added(self, symbol: str | None) -> None:
-        if symbol is None or symbol in self.store.get_watchlist():
-            return
-
-        if not self.load_symbol_quick(symbol) :
-            return
-
-        self.store.add_to_watchlist(symbol)
-        self.refresh_sidebar()
-
 
     def action_cycle_timeframe(self) -> None:
         timeframes = list(Timeframe)
@@ -388,10 +387,26 @@ class DashboardScreen(Screen[None]):
 
     def action_toggle_view(self) -> None:
         self.show_financials = not self.show_financials
+
         chart = self.query_one("#chart", Chart)
+        no_data = self.query_one("#no-data", Static)
         vscroll = self.query_one("#vscroll", VerticalScroll)
-        chart.display = not self.show_financials
+
         vscroll.display = self.show_financials
+
+        if self.show_financials :
+            chart.display = False
+            no_data.display = False
+        else :
+            current_asset = self.store.get_current_asset()
+            self.set_chart_node(
+                chart_data=self.store.get_current_chart().get_chart_view(self.chart_range),
+                range=self.chart_range,
+                timezone=current_asset.timezone,
+                show_lines=self.reference_lines,
+            )
+
+    ## View Setting //
 
     def set_loading(self, loading: bool) -> None:
         self.query_one("#loading", Static).display = loading
@@ -399,6 +414,8 @@ class DashboardScreen(Screen[None]):
         self.query_one("#footer", Footer).display = not loading
         self.query_one("#no-data", Static).display = False
         self.query_one("#vscroll", VerticalScroll).display = False
+
+    # Compose //
 
     def compose(self):
         with HorizontalScroll(id = "ticker-scroll") :
