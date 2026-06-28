@@ -28,33 +28,14 @@ from widgets.watchlist import WatchList
 
 class DashboardScreen(Screen[None]):
 
-    theme = ROSE_PINE
+    ## Attributes //
 
     store: Store
-
     service: MarketDataService
-
     chart_range: Timeframe
-
     reference_lines: bool
 
-    def __init__(self):
-
-        super().__init__()
-
-        # service /
-        self.service = MarketDataService()
-
-        # store /
-        self.store = Store()
-
-        self.chart_range = Timeframe.ONE_DAY
-
-        # timers /
-        self.last_refresh = time.time()
-
-        # booleans /
-        self.reference_lines = True
+    ## Bindings //
 
     BINDINGS = [
         Binding("g", "cycle_timeframe", "Cycle Timeframe"),
@@ -63,6 +44,10 @@ class DashboardScreen(Screen[None]):
         Binding("d", "remove_ticker", "Remove Ticker"),
         Binding("v", "toggle_view", "Toggle View")
     ]
+
+    ## Styling //
+
+    theme = ROSE_PINE
 
     CSS = f"""
 
@@ -143,8 +128,71 @@ class DashboardScreen(Screen[None]):
 
     """
 
+    ## Init //
 
-    # -- UI Nodes --
+    def __init__(self):
+        super().__init__()
+
+        self.service = MarketDataService()
+        self.store = Store()
+        self.chart_range = Timeframe.ONE_DAY
+        self.last_refresh = time.time()
+        self.reference_lines = True
+
+    ## Compose //
+
+    def compose(self):
+        with HorizontalScroll(id = "ticker-scroll") :
+            yield TickerBar(id="ticker")
+
+        with Horizontal(id = "body"):
+
+            # Left pane stuff
+            with Vertical(id = "sidebar"):
+                yield WatchList(id = "watchlist")
+
+            # Right pane stuff
+            with Vertical(id = "main"):
+                yield Summary(id="summary")
+                with ContentSwitcher(id="content", initial = "chart-pane"):
+                    with Container(id = "chart-pane"):
+                        yield Chart(id="chart")
+                        yield Static(id="no-data")
+                    with VerticalScroll(id="vscroll"):
+                        yield Financials(id = "financials")
+                yield News(id="news")
+
+        yield Footer(id = "footer")
+        yield LoadingScreen(id = "loading")        
+
+    ## Lifecycle //
+
+    def on_mount(self) -> None:
+
+        # every 60 seconds, a minute passes on wall street
+        ## as such we must refresh
+        self.last_refresh = time.time()
+        self.set_interval(1, self.update_chart_timer)
+        self.set_interval(60, self.refresh_intraday)
+
+        # initial state
+        self.chart_range = Timeframe.ONE_DAY
+        self.store.set_current_symbol(self.store.get_watchlist()[0])
+
+        # startup stuff
+        self.set_loading(True)
+        self.load_initial_data()
+
+
+    def on_symbol_selected(self, event: SymbolSelected) -> None:
+        self.store.set_current_symbol(event.symbol)
+        if not self.store.has_news_items(event.symbol):
+            self.load_symbol_details(event.symbol)
+        self.refresh_current()
+
+
+    ## Widget Updates //
+
     def set_summary_node(self, asset: Asset) :
         summary = self.query_one("#summary", Summary)
         summary.set_asset(asset)
@@ -153,6 +201,7 @@ class DashboardScreen(Screen[None]):
         chart = self.query_one("#chart", Chart)
         no_data = self.query_one("#no-data", Static)
 
+        # if no data show no-data screen
         if chart_data is None or not chart_data.points or (range == Timeframe.ONE_DAY and len(chart_data.points) == 1):
             chart.display = False
             no_data.display = True
@@ -189,7 +238,8 @@ class DashboardScreen(Screen[None]):
         tickers.set_assets(assets, cache)
 
 
-    # -- Refresh UI Helpers --
+    ## Refresh Helpers //
+
     def refresh_sidebar(self) -> None:
         self.set_watchlist_node(self.store.get_assets())
         self.set_tickers_node(
@@ -203,31 +253,24 @@ class DashboardScreen(Screen[None]):
         current_chart = self.store.get_current_chart().get_chart_view(self.chart_range)
 
         self.set_summary_node(current_asset)
-
         self.set_chart_node(
             chart_data = current_chart,
             range = self.chart_range,
             timezone = current_asset.timezone,
             show_lines = self.reference_lines,
         )
-
         self.set_financials_node(
             self.store.get_current_symbol(),
             self.store.get_current_financials(),
         )
-
         self.set_news_node(
             self.store.get_current_news()
         )
 
-    def on_symbol_selected(self, event: SymbolSelected) -> None:
-        self.store.set_current_symbol(event.symbol)
-        if not self.store.has_news_items(event.symbol):
-            self.load_symbol_details(event.symbol)
-        self.refresh_current()
+    ## Data Loading //
 
+    ## Background Tasks ///
 
-    # -- UI Updates --
     @work(exclusive = True, group = "refresh")
     async def refresh_intraday(self) -> None:
         for symbol, cache in self.store.charts.items():
@@ -255,11 +298,7 @@ class DashboardScreen(Screen[None]):
         self.refresh_current()
         self.set_loading(False)
 
-    def update_chart_timer(self) -> None:
-        age = int(time.time() - self.last_refresh)
-        next_refresh = max(0, 60 - age)
-        chart = self.query_one("#chart", Chart)
-        chart.update_refresh_timer(next_refresh)
+    ## Data Tasks ///
 
     def load_symbol_quick(self, symbol: str) -> bool:
         try:
@@ -299,25 +338,15 @@ class DashboardScreen(Screen[None]):
             self.notify(f"Could not load details for `{symbol}`")
             return False
 
-    def on_mount(self) -> None:
+    ## Timers ///
 
-        # every 60 seconds, a minute passes on wall street
-        ## as such we must refresh
-        self.last_refresh = time.time()
-        self.set_interval(1, self.update_chart_timer)
-        self.set_interval(60, self.refresh_intraday)
+    def update_chart_timer(self) -> None:
+        age = int(time.time() - self.last_refresh)
+        next_refresh = max(0, 60 - age)
+        chart = self.query_one("#chart", Chart)
+        chart.update_refresh_timer(next_refresh)
 
-        # boolean toggles
-        self.reference_lines = True
-
-        # seed stuffs
-        self.store.set_current_symbol(self.store.get_watchlist()[0])
-        self.chart_range = Timeframe.ONE_DAY
-
-        self.set_loading(True)
-        self.load_initial_data()
-
-    # Actions //
+    ## Actions //
 
     def action_add_ticker(self) -> None:
         self.app.push_screen(
@@ -388,37 +417,13 @@ class DashboardScreen(Screen[None]):
             if switcher.current == "chart-pane"
             else "chart-pane"
         )
-    ## View Setting //
+
+    ## Misc //
 
     def set_loading(self, loading: bool) -> None:
         self.query_one("#loading", Static).display = loading
         self.query_one("#content", ContentSwitcher).display = not loading
         self.query_one("#footer", Footer).display = not loading
 
-    # Compose //
-
-    def compose(self):
-        with HorizontalScroll(id = "ticker-scroll") :
-            yield TickerBar(id="ticker")
-
-        with Horizontal(id = "body"):
-
-            # Left pane stuff
-            with Vertical(id = "sidebar"):
-                yield WatchList(id = "watchlist")
-
-            # Right pane stuff
-            with Vertical(id = "main"):
-                yield Summary(id="summary")
-                with ContentSwitcher(id="content", initial = "chart-pane"):
-                    with Container(id = "chart-pane"):
-                        yield Chart(id="chart")
-                        yield Static(id="no-data")
-                    with VerticalScroll(id="vscroll"):
-                        yield Financials(id = "financials")
-                yield News(id="news")
-
-        yield Footer(id = "footer")
-        yield LoadingScreen(id = "loading")        
 
 
