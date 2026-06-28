@@ -22,7 +22,12 @@ class Chart(PlotextPlot):
     }}
     """
 
-    def set_chart_data(self, chart_data: ChartData, timeframe: Timeframe, timezone: str, reference_lines: bool = True):
+    reference_lines : bool = True
+
+    def toggle_reference_lines(self) -> None:
+        self.reference_lines = not self.reference_lines
+
+    def set_chart_data(self, chart_data: ChartData, timeframe: Timeframe, timezone: str):
         self.plt.clear_data()
 
         log(chart_data)
@@ -68,7 +73,7 @@ class Chart(PlotextPlot):
         day_low = min(prices)
 
         # reference lines (open, low, high, curr)
-        if reference_lines :
+        if self.reference_lines :
 
             self.plt.hline(day_open, color="yellow")
             self.plt.hline(current_price, color="white")

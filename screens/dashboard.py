@@ -33,7 +33,6 @@ class DashboardScreen(Screen[None]):
     store: Store
     service: MarketDataService
     chart_range: Timeframe
-    reference_lines: bool
 
     ## Bindings //
 
@@ -137,7 +136,6 @@ class DashboardScreen(Screen[None]):
         self.store = Store()
         self.chart_range = Timeframe.ONE_DAY
         self.last_refresh = time.time()
-        self.reference_lines = True
 
     ## Compose //
 
@@ -219,7 +217,7 @@ class DashboardScreen(Screen[None]):
         chart.display = True
         no_data.display = False
 
-        chart.set_chart_data(chart_data = chart_data, timeframe = range, timezone = timezone, reference_lines = show_lines)
+        chart.set_chart_data(chart_data = chart_data, timeframe = range, timezone = timezone)
 
     def set_financials_node(self, symbol: str, financial_data: TickerFinancials) :
         financials = self.query_one("#financials", Financials)
@@ -257,7 +255,6 @@ class DashboardScreen(Screen[None]):
             chart_data = current_chart,
             range = self.chart_range,
             timezone = current_asset.timezone,
-            show_lines = self.reference_lines,
         )
         self.set_financials_node(
             self.store.get_current_symbol(),
@@ -399,16 +396,20 @@ class DashboardScreen(Screen[None]):
                 chart_data = chart,
                 range = self.chart_range,
                 timezone = current_asset.timezone,
-                show_lines = self.reference_lines
             )
 
     def action_toggle_reference_lines(self) -> None:
+
+        chart = self.query_one("#chart", Chart)
+        chart.toggle_reference_lines()
+
+        current_asset = self.store.get_current_asset()
+
         self.reference_lines = not self.reference_lines
         self.set_chart_node(
                 chart_data = self.store.get_current_chart().get_chart_view(self.chart_range),
                 range = self.chart_range,
                 timezone = current_asset.timezone,
-                show_lines = self.reference_lines
             )
 
     def action_toggle_view(self) -> None:
