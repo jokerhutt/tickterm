@@ -3,7 +3,7 @@
 
 import asyncio
 from textual import work
-from textual.widgets import Footer, Static
+from textual.widgets import ContentSwitcher, Footer, Static
 from screens.loading_screen import LoadingScreen
 from store import Store
 import time
@@ -37,7 +37,6 @@ class DashboardScreen(Screen[None]):
     chart_range: Timeframe
 
     reference_lines: bool
-    show_financials: bool
 
     def __init__(self):
 
@@ -56,7 +55,6 @@ class DashboardScreen(Screen[None]):
 
         # booleans /
         self.reference_lines = True
-        self.show_financials = False
 
     BINDINGS = [
         Binding("g", "cycle_timeframe", "Cycle Timeframe"),
@@ -97,7 +95,6 @@ class DashboardScreen(Screen[None]):
     }}
 
     #content {{
-        layout: vertical;
         height: 1fr;
     }}
 
@@ -127,7 +124,6 @@ class DashboardScreen(Screen[None]):
     }}
 
     #no-data {{
-        display: none;
         content-align: center middle;
         text-align: center;
         height: 1fr;
@@ -136,7 +132,6 @@ class DashboardScreen(Screen[None]):
 
     #vscroll {{
         height: 1fr;
-        display: none;
         overflow-y: auto;
     }}
 
@@ -386,34 +381,19 @@ class DashboardScreen(Screen[None]):
             )
 
     def action_toggle_view(self) -> None:
-        self.show_financials = not self.show_financials
+        switcher = self.query_one("#content", ContentSwitcher)
 
-        chart = self.query_one("#chart", Chart)
-        no_data = self.query_one("#no-data", Static)
-        vscroll = self.query_one("#vscroll", VerticalScroll)
-
-        vscroll.display = self.show_financials
-
-        if self.show_financials :
-            chart.display = False
-            no_data.display = False
-        else :
-            current_asset = self.store.get_current_asset()
-            self.set_chart_node(
-                chart_data=self.store.get_current_chart().get_chart_view(self.chart_range),
-                range=self.chart_range,
-                timezone=current_asset.timezone,
-                show_lines=self.reference_lines,
-            )
-
+        switcher.current = (
+            "vscroll"
+            if switcher.current == "chart-pane"
+            else "chart-pane"
+        )
     ## View Setting //
 
     def set_loading(self, loading: bool) -> None:
         self.query_one("#loading", Static).display = loading
-        self.query_one("#chart", Chart).display = not loading
+        self.query_one("#content", ContentSwitcher).display = not loading
         self.query_one("#footer", Footer).display = not loading
-        self.query_one("#no-data", Static).display = False
-        self.query_one("#vscroll", VerticalScroll).display = False
 
     # Compose //
 
@@ -430,9 +410,10 @@ class DashboardScreen(Screen[None]):
             # Right pane stuff
             with Vertical(id = "main"):
                 yield Summary(id="summary")
-                with Container(id = "content"):
-                    yield Chart(id="chart")
-                    yield Static(id="no-data")
+                with ContentSwitcher(id="content", initial = "chart-pane"):
+                    with Container(id = "chart-pane"):
+                        yield Chart(id="chart")
+                        yield Static(id="no-data")
                     with VerticalScroll(id="vscroll"):
                         yield Financials(id = "financials")
                 yield News(id="news")
