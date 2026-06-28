@@ -158,7 +158,7 @@ class DashboardScreen(Screen[None]):
         chart = self.query_one("#chart", Chart)
         no_data = self.query_one("#no-data", Static)
 
-        if chart_data is None or not chart_data.points:
+        if chart_data is None or not chart_data.points or (range == Timeframe.ONE_DAY and len(chart_data.points) == 1):
             chart.display = False
             no_data.display = True
             no_data.update(
