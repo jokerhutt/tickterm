@@ -298,6 +298,8 @@ class DashboardScreen(Screen[None]):
         self.refresh_current()
         self.set_loading(False)
 
+        self.query_one("#watchlist", WatchList).focus()
+
     ## Data Tasks ///
 
     def load_symbol_quick(self, symbol: str) -> bool:
