@@ -18,6 +18,7 @@ from models.news_item import NewsItem
 from screens.add_ticker_modal import AddTickerModal
 from services.market_data_service import MarketDataService
 from themes import ROSE_PINE
+from widgets.asset_overview import AssetOverview
 from widgets.chart import Chart
 from widgets.financials import Financials
 from widgets.news import News
@@ -90,7 +91,13 @@ class DashboardScreen(Screen[None]):
 
     #watchlist {{
         background: {ROSE_PINE["surface"]};
+        height: 2fr;
+    }}
+
+    #asset-overview {{
+        background: {ROSE_PINE["surface"]};
         height: 1fr;
+        padding: 1;
     }}
 
     WatchList > .datatable--cursor {{
@@ -148,6 +155,7 @@ class DashboardScreen(Screen[None]):
             # Left pane stuff
             with Vertical(id = "sidebar"):
                 yield WatchList(id = "watchlist")
+                yield AssetOverview(id = "asset-overview")
 
             # Right pane stuff
             with Vertical(id = "main"):
@@ -194,6 +202,10 @@ class DashboardScreen(Screen[None]):
     def set_summary_node(self, asset: Asset) :
         summary = self.query_one("#summary", Summary)
         summary.set_asset(asset)
+
+    def set_asset_overview_node(self, asset: Asset | None) -> None:
+        overview = self.query_one("#asset-overview", AssetOverview)
+        overview.set_asset(asset)
 
     def set_chart_node(self, chart_data: ChartData | None, range: Timeframe, timezone: str, show_lines: bool = True) :
         chart = self.query_one("#chart", Chart)
@@ -244,6 +256,7 @@ class DashboardScreen(Screen[None]):
             self.store.get_assets(),
             self.store.get_charts(),
         )
+        self.set_asset_overview_node(self.store.get_current_asset())
 
     def refresh_current(self) -> None:
 
@@ -251,6 +264,7 @@ class DashboardScreen(Screen[None]):
         current_chart = self.store.get_current_chart().get_chart_view(self.chart_range)
 
         self.set_summary_node(current_asset)
+        self.set_asset_overview_node(current_asset)
         self.set_chart_node(
             chart_data = current_chart,
             range = self.chart_range,

@@ -15,3 +15,16 @@ git clone https://github.com/jokerhutt/tickterm.git
 cd tickterm
 uv sync
 uv run python main.py
+```
+
+## Keybindings
+
+| Key | Action |
+|------|--------|
+| ↑ / ↓ | Select ticker |
+| Enter | Open ticker |
+| g | Cycle chart time period|
+| v | Toggle Chart / Financials|
+| a | Add ticker |
+| d | Remove ticker |
+| ctrl+q | Quit |
