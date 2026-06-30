@@ -118,7 +118,7 @@ class DashboardScreen(Screen[None]):
     #financials {{}}
 
     #news {{
-        height: 8;
+        height: 16;
     }}
 
     """
