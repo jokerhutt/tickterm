@@ -11,7 +11,7 @@ from textual.binding import Binding
 from textual.containers import Container, Horizontal, HorizontalScroll, Vertical, VerticalScroll
 from textual.screen import Screen
 from messages.symbol_selected import SymbolSelected
-from models.asset import Asset
+from models.asset import Asset, AssetMetadata
 from models.chart_data import ChartCache, ChartData, TimeRange, Timeframe
 from models.financials import TickerFinancials
 from models.news_item import NewsItem
@@ -59,16 +59,6 @@ class DashboardScreen(Screen[None]):
 
     #footer {{}}
 
-    #ticker {{
-        background: {ROSE_PINE["surface"]};
-        height: 5;
-    }}
-
-    #ticker-scroll {{
-        height: 5;
-        overflow-x: auto;
-    }}
-
     #body {{
         height: 1fr;
     }}
@@ -90,7 +80,7 @@ class DashboardScreen(Screen[None]):
 
     #watchlist {{
         background: {ROSE_PINE["surface"]};
-        height: 2fr;
+        height: 3fr;
     }}
 
     #asset-overview {{
@@ -199,9 +189,9 @@ class DashboardScreen(Screen[None]):
         summary = self.query_one("#summary", Summary)
         summary.set_asset(asset)
 
-    def set_asset_overview_node(self, asset: Asset | None) -> None:
+    def set_asset_overview_node(self, asset: Asset | None, metadata: AssetMetadata | None) -> None:
         overview = self.query_one("#asset-overview", AssetOverview)
-        overview.set_asset(asset)
+        overview.set_asset(asset, metadata)
 
     def set_chart_node(self, chart_data: ChartData | None, range: Timeframe, timezone: str, show_lines: bool = True) :
         chart = self.query_one("#chart", Chart)
@@ -243,15 +233,16 @@ class DashboardScreen(Screen[None]):
 
     def refresh_sidebar(self) -> None:
         self.set_watchlist_node(self.store.get_assets())
-        self.set_asset_overview_node(self.store.get_current_asset())
+        self.set_asset_overview_node(self.store.get_current_asset(), self.load_asset_metadata(self.store.get_current_symbol()))
 
     def refresh_current(self) -> None:
 
         current_asset = self.store.get_current_asset()
+        current_asset_metadata = self.store.get_current_asset_metadata()
         current_chart = self.store.get_current_chart().get_chart_view(self.chart_range)
 
         self.set_summary_node(current_asset)
-        self.set_asset_overview_node(current_asset)
+        self.set_asset_overview_node(current_asset, current_asset_metadata)
         self.set_chart_node(
             chart_data = current_chart,
             range = self.chart_range,
@@ -337,6 +328,16 @@ class DashboardScreen(Screen[None]):
         except Exception:
             self.notify(f"Could not load details for `{symbol}`")
             return False
+
+    def load_asset_metadata(self, symbol: str) -> AssetMetadata | None:
+        cache_metadata = self.store.get_current_asset_metadata()
+
+        if cache_metadata :
+            return cache_metadata
+
+        fresh_metadata = self.service.get_asset_metadata(symbol)
+        self.store.set_asset_metadata(fresh_metadata)
+        return fresh_metadata
 
     ## Timers ///
 

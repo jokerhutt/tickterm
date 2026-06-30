@@ -11,8 +11,22 @@ def get_connection() -> sqlite3.Connection:
 
 def init_db() -> None:
     with get_connection() as conn:
+
+        # init watchlist
         conn.execute("""
             CREATE TABLE IF NOT EXISTS watchlist (
                 symbol TEXT PRIMARY KEY
             )
+        """)
+
+        # init asset_metadata
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS asset_metadata (
+                symbol TEXT PRIMARY KEY,
+                long_name TEXT,
+                description TEXT,
+                sector TEXT,
+                industry TEXT,
+                exchange TEXT
+            )        
         """)

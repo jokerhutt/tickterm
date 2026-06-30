@@ -1,8 +1,9 @@
 # ∴ Jokerhut / store.py
 
 
+from db.asset_metadata_repository import AssetMetadataRepository
 from db.watchlist_repository import WatchlistRepository
-from models.asset import Asset
+from models.asset import Asset, AssetMetadata
 from models.chart_data import ChartCache, ChartData, Timeframe
 from models.financials import TickerFinancials
 from models.news_item import NewsItem
@@ -11,15 +12,18 @@ from models.news_item import NewsItem
 class Store :
 
     def __init__(self):
-        self.repo = WatchlistRepository()
+        self.watchlist_repo = WatchlistRepository()
+        self.asset_metadata_repo = AssetMetadataRepository()
 
-        self.watchlist = self.repo.get_all()
+        self.watchlist = self.watchlist_repo.get_all()
 
         # some defaults if watchlist empty
         if not self.watchlist:
             self.watchlist = ["AAPL", "MSFT", "NVDA"]
             for symbol in self.watchlist:
-                self.repo.add(symbol)
+                self.watchlist_repo.add(symbol)
+
+        self.asset_metadatas : dict[str, AssetMetadata]= self.asset_metadata_repo.get_all() or {}
 
         self.assets = {}
         self.financials = {}
@@ -34,17 +38,28 @@ class Store :
     def get_current_symbol(self) -> str :
         return self.current_symbol
 
+    # ASSET METADATAS
+    def get_current_asset_metadata(self) -> AssetMetadata | None:
+       return self.asset_metadatas.get(self.current_symbol)
+
+    def set_asset_metadata(self, asset_metadata: AssetMetadata | None) :
+        if not asset_metadata :
+            return
+        symbol = asset_metadata.symbol
+        self.asset_metadata_repo.add(asset_metadata)
+        self.asset_metadatas[symbol] = asset_metadata
+
     # WATCHLIST
     def get_watchlist(self) -> list[str] :
         return self.watchlist
 
     def add_to_watchlist(self, symbol: str):
-        self.repo.add(symbol)
+        self.watchlist_repo.add(symbol)
         self.watchlist.append(symbol)
 
     def remove_from_watchlist(self, symbol: str):
         self.watchlist.remove(symbol)
-        self.repo.remove(symbol)
+        self.watchlist_repo.remove(symbol)
         self.assets.pop(symbol, None)
         self.financials.pop(symbol, None)
         self.charts.pop(symbol, None)
@@ -89,9 +104,6 @@ class Store :
     def set_asset(self, symbol: str, asset: Asset) :
         self.assets[symbol] = asset
 
-    # ASSET METADATAS
-    def get_current_asset_metadata(self, symbol: str) :
-        
 
     # CHARTS
     def get_current_chart(self) -> ChartCache | None :

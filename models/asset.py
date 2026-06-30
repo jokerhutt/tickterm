@@ -7,13 +7,13 @@ from enum import Enum
 @dataclass
 class AssetMetadata:
     symbol: str
-    long_name: str
-    description: str
+    long_name: str | None
+    description: str | None
 
-    sector: str
-    industry: str
+    sector: str | None
+    industry: str | None 
 
-    exchange: str
+    exchange: str | None
 
 @dataclass
 class Asset:
