@@ -1,3 +1,5 @@
+# ∴ Jokerhut / widgets/asset_overview.py
+
 
 
 from rich.console import Group
@@ -7,6 +9,7 @@ from rich.table import Table
 from textual.widgets import Static
 
 from models.asset import Asset
+from themes import ROSE_PINE
 
 
 class AssetOverview(Static) :
@@ -15,27 +18,21 @@ class AssetOverview(Static) :
 
         if asset is None:
             self.update(
-                Panel(
-                    Text("No asset selected", style="bold"),
-                    title="Asset",
+                Group(
+                    Text("Asset Detail", style=(ROSE_PINE["gold"])),
+                    Text(),
+                    Text("No asset selected"),
                 )
             )
             return
 
-        table = Table.grid(expand=True)
-
-        table.add_column()
-        table.add_column(justify="right")
-        table.add_row("Exchange", asset.exchange or "N/A")
-        table.add_row("Currency", asset.currency or "N/A")
-        table.add_row("Timezone", asset.timezone or "N/A")
+        currency = asset.currency or "N/A"
 
         self.update(
-            Panel(
-                Group(
-                    Text(asset.name or "N/A", style="bold"),
-                    table,
-                ),
-                title="Asset",
+            Group(
+                Text("Asset Detail", style=ROSE_PINE["gold"]),
+                Text(),
+                Text(asset.name or asset.symbol, style="bold"),
+                Text(f"{currency}", style="dim"),
             )
         )

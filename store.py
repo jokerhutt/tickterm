@@ -89,6 +89,10 @@ class Store :
     def set_asset(self, symbol: str, asset: Asset) :
         self.assets[symbol] = asset
 
+    # ASSET METADATAS
+    def get_current_asset_metadata(self, symbol: str) :
+        
+
     # CHARTS
     def get_current_chart(self) -> ChartCache | None :
         return self.charts[self.current_symbol]

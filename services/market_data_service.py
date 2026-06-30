@@ -6,7 +6,7 @@ from pandas import Timestamp
 from textual import log
 from yfinance.base import FastInfo
 import yfinance as yf
-from models.asset import Asset
+from models.asset import Asset, AssetMetadata
 from models.chart_data import ChartCache, ChartData, ChartPoint, TimeRange, Timeframe
 from models.financials import TickerFinancials
 from models.news_item import NewsItem
@@ -62,6 +62,24 @@ class MarketDataService:
             volume = volume,
             market_cap = market_cap
         )
+
+    def get_asset_metadata(self, symbol: str) -> AssetMetadata | None :
+
+        ticker = yf.Ticker(symbol)
+        info = ticker.info
+
+        if not ticker or not info :
+            return None
+
+        return AssetMetadata(
+            symbol = symbol,
+            long_name = info["longName"],
+            description = info["longBusinessSummary"],
+            sector = info["sector"],
+            industry = info["industry"],
+            exchange = info["fullExchangeName"]
+        )
+
 
     def get_row(self, frame, name: str) -> list[float | None]:
         columns = list(frame.columns)[:4]

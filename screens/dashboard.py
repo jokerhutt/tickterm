@@ -23,7 +23,6 @@ from widgets.chart import Chart
 from widgets.financials import Financials
 from widgets.news import News
 from widgets.summary import Summary
-from widgets.ticker_bar import TickerBar
 from widgets.watchlist import WatchList
 
 
@@ -147,9 +146,6 @@ class DashboardScreen(Screen[None]):
     ## Compose //
 
     def compose(self):
-        with HorizontalScroll(id = "ticker-scroll") :
-            yield TickerBar(id="ticker")
-
         with Horizontal(id = "body"):
 
             # Left pane stuff
@@ -243,19 +239,10 @@ class DashboardScreen(Screen[None]):
         watchlist = self.query_one("#watchlist", WatchList)
         watchlist.set_assets(assets)
 
-    def set_tickers_node(self, assets: list[Asset], cache: dict[str, ChartCache]) :
-        tickers = self.query_one("#ticker", TickerBar)
-        tickers.set_assets(assets, cache)
-
-
     ## Refresh Helpers //
 
     def refresh_sidebar(self) -> None:
         self.set_watchlist_node(self.store.get_assets())
-        self.set_tickers_node(
-            self.store.get_assets(),
-            self.store.get_charts(),
-        )
         self.set_asset_overview_node(self.store.get_current_asset())
 
     def refresh_current(self) -> None:
