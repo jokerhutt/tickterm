@@ -34,6 +34,7 @@ class DashboardScreen(Screen[None]):
     service: MarketDataService
     chart_range: Timeframe
 
+
     ## Bindings //
 
     BINDINGS = [
@@ -180,6 +181,8 @@ class DashboardScreen(Screen[None]):
         self.store.set_current_symbol(event.symbol)
         if not self.store.has_news_items(event.symbol):
             self.load_symbol_details(event.symbol)
+
+        self.refresh_asset_overview()
         self.refresh_current()
 
 
@@ -231,18 +234,22 @@ class DashboardScreen(Screen[None]):
 
     ## Refresh Helpers //
 
-    def refresh_sidebar(self) -> None:
+    def refresh_watchlist(self) -> None:
         self.set_watchlist_node(self.store.get_assets())
-        self.set_asset_overview_node(self.store.get_current_asset(), self.load_asset_metadata(self.store.get_current_symbol()))
+
+    def refresh_asset_overview(self) -> None:
+        self.query_one(AssetOverview).show_loading(
+            self.store.get_current_asset()
+        )
+
+        self.load_metadata_worker(self.store.get_current_symbol())
 
     def refresh_current(self) -> None:
 
         current_asset = self.store.get_current_asset()
-        current_asset_metadata = self.store.get_current_asset_metadata()
         current_chart = self.store.get_current_chart().get_chart_view(self.chart_range)
 
         self.set_summary_node(current_asset)
-        self.set_asset_overview_node(current_asset, current_asset_metadata)
         self.set_chart_node(
             chart_data = current_chart,
             range = self.chart_range,
@@ -270,7 +277,7 @@ class DashboardScreen(Screen[None]):
 
         self.last_refresh = time.time()
 
-        self.refresh_sidebar()
+        self.refresh_watchlist()
         self.refresh_current()
 
     @work
@@ -283,13 +290,27 @@ class DashboardScreen(Screen[None]):
             self.store.get_current_symbol()
         )
 
-        self.refresh_sidebar()
+        self.refresh_watchlist()
         self.refresh_current()
+        self.refresh_asset_overview()
         self.set_loading(False)
 
         self.query_one("#watchlist", WatchList).focus()
 
     ## Data Tasks ///
+
+    @work
+    async def load_metadata_worker(self, symbol: str) -> None:
+        metadata = await asyncio.to_thread(
+            self.load_asset_metadata,
+            symbol,
+        )
+
+        if self.store.get_current_symbol() != symbol:
+            return
+
+        asset = self.store.get_current_asset()
+        self.set_asset_overview_node(asset, metadata)
 
     def load_symbol_quick(self, symbol: str) -> bool:
         try:
@@ -363,7 +384,8 @@ class DashboardScreen(Screen[None]):
             return
 
         self.store.add_to_watchlist(symbol)
-        self.refresh_sidebar()
+        self.refresh_watchlist()
+        self.refresh_asset_overview()
 
     def action_remove_ticker(self) -> None:
         symbol = self.store.get_current_symbol()
@@ -376,7 +398,8 @@ class DashboardScreen(Screen[None]):
 
         self.store.remove_from_watchlist(symbol)
 
-        self.refresh_sidebar()
+        self.refresh_watchlist()
+        self.refresh_asset_overview()
         self.refresh_current()
 
     def action_cycle_timeframe(self) -> None:

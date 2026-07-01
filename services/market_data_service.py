@@ -68,16 +68,18 @@ class MarketDataService:
         ticker = yf.Ticker(symbol)
         info = ticker.info
 
+        log(info)
+
         if not ticker or not info :
             return None
 
         return AssetMetadata(
             symbol = symbol,
-            long_name = info["longName"],
-            description = info["longBusinessSummary"],
-            sector = info["sector"],
-            industry = info["industry"],
-            exchange = info["fullExchangeName"]
+            long_name = info.get("longName"),
+            description = info.get("longBusinessSummary"),
+            sector = info.get("sector"),
+            industry = info.get("industry"),
+            exchange = info.get("exchange"),
         )
 
 

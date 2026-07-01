@@ -30,6 +30,10 @@ class WatchList(DataTable[RenderableType]) :
         self.asset_rows = {}
 
     def set_assets(self, assets: list[Asset]) :
+
+        # so the cursor doesnt shoot up on clear
+        cursor = self.cursor_row
+
         self.clear()
         self.asset_rows.clear()
         self.last_row = -1
@@ -64,7 +68,12 @@ class WatchList(DataTable[RenderableType]) :
                 )
 
                 self.asset_rows[row] = asset
+
                 row += 1
+
+        if self.row_count:
+            self.move_cursor(row=min(cursor, self.row_count - 1))
+            self.last_row = self.cursor_row
 
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted):
         if event.cursor_row == 0:

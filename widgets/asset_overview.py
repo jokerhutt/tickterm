@@ -14,6 +14,19 @@ from themes import ROSE_PINE
 
 class AssetOverview(Static) :
 
+    def show_loading(self, asset: Asset | None) -> None:
+        if asset is None:
+            return
+
+        self.update(
+            Group(
+                Text("Asset Detail", style=ROSE_PINE["gold"]),
+                Text(),
+                Text(asset.symbol, style="bold"),
+                Text("Loading metadata...", style="yellow"),
+            )
+        )
+
     def set_asset(self, asset: Asset | None, metadata: AssetMetadata | None) -> None:
 
         if asset is None:

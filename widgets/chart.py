@@ -30,7 +30,7 @@ class Chart(PlotextPlot):
     def set_chart_data(self, chart_data: ChartData, timeframe: Timeframe, timezone: str):
         self.plt.clear_data()
 
-        log(chart_data)
+        # log(chart_data)
 
         self.theme = "textual-clear"
         
