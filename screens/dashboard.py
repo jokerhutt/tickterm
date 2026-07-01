@@ -38,7 +38,7 @@ class DashboardScreen(Screen[None]):
     ## Bindings //
 
     BINDINGS = [
-        Binding("g", "cycle_timeframe", "Cycle Timeframe"),
+        Binding("t", "cycle_timeframe", "Cycle Timeframe"),
         Binding("l", "toggle_reference_lines", "Toggle Reference Lines"),
         Binding("a", "add_ticker", "Add Ticker"),
         Binding("d", "remove_ticker", "Remove Ticker"),
@@ -81,7 +81,7 @@ class DashboardScreen(Screen[None]):
 
     #watchlist {{
         background: {ROSE_PINE["surface"]};
-        height: 3fr;
+        height: 4fr;
     }}
 
     #asset-overview {{

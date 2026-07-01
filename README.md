@@ -23,7 +23,7 @@ uv run python main.py
 |------|--------|
 | ↑ / ↓ | Select ticker |
 | Enter | Open ticker |
-| g | Cycle chart time period|
+| t | Cycle chart time period|
 | v | Toggle Chart / Financials|
 | a | Add ticker |
 | d | Remove ticker |
